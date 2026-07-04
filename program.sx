@@ -1,0 +1,135 @@
+# ============================================================
+# program.sx - full feature tour of the Luin language
+# ============================================================
+
+# ---------- Variables & primitive types ----------
+name = "Luin"
+version = 2
+pi = 3.14159
+isReady = true
+show(name)
+show(version)
+show(pi)
+show(isReady)
+
+# ---------- Arithmetic (+ - * / % and unary minus) ----------
+a = 10
+b = 3
+show(a + b)
+show(a - b)
+show(a * b)
+show(a / b)
+show(a % b)
+show(-a)
+show(-pi)
+show(a - -b)
+
+# ---------- Comparisons ----------
+show(a == 10)
+show(a != b)
+show(a > b)
+show(a >= 10)
+show(b < a)
+show(b <= 3)
+show(9 == 9.0)
+
+# ---------- Strings & f-strings ----------
+greeting = f"Hello, {name}! Version is {version}"
+show(greeting)
+
+# ---------- if / elf / els ----------
+score = 82
+if score >= 90: show("Grade: A")
+elf score >= 80: show("Grade: B")
+elf score >= 70: show("Grade: C")
+els: show("Grade: F")
+
+# ---------- while loop ----------
+counter = 0
+while counter < 3 {
+    show(f"counter = {counter}")
+    counter = counter + 1
+}
+
+# ---------- arrays & for-in loop ----------
+colors = ["red", "green", "blue"]
+for color colors {
+    show(f"color: {color}")
+}
+
+# ---------- loop / sloop (infinite loop + break) ----------
+n = 0
+loop {
+    n = n + 1
+    show(f"loop tick {n}")
+    if n >= 3: sloop()
+}
+
+# ---------- functions, params, return values ----------
+fn add(x, y) {
+    rtn x + y
+}
+sum = add(4, 5)
+show(f"add(4, 5) = {sum}")
+
+# ---------- recursion (tests scoping across call frames) ----------
+fn factorial(k) {
+    if k <= 1: rtn 1
+    rtn k * factorial(k - 1)
+}
+fact5 = factorial(5)
+show(f"factorial(5) = {fact5}")
+
+# ---------- functions mutating an outer/global variable ----------
+total = 0
+fn addToTotal(amount) {
+    total = total + amount
+}
+addToTotal(10)
+addToTotal(5)
+show(f"total = {total}")
+
+# ---------- classes: init, fields, methods, self ----------
+cls Player {
+    fn init(playerName, hp) {
+        self.playerName = playerName
+        self.hp = hp
+    }
+
+    fn takeDamage(amount) {
+        self.hp = self.hp - amount
+        show(f"{self.playerName} took {amount} damage, hp now {self.hp}")
+    }
+
+    fn isAlive() {
+        rtn self.hp > 0
+    }
+}
+
+hero = Player("Hero", 100)
+show(hero.playerName)
+show(hero.hp)
+hero.takeDamage(30)
+show(f"After hit, {hero.playerName} hp is {hero.hp}")
+show(hero.isAlive())
+
+# instance equality (identity) vs array equality (structural)
+hero2 = Player("Hero", 100)
+show(hero == hero)
+show(hero == hero2)
+show([1, 2, 3] == [1, 2, 3])
+show([1, 2, 3] == [1, 2, 4])
+
+# ---------- ask() for user input, single and multiple variables ----------
+userName = ""
+ask("Enter your name: ">>userName)
+show(f"Nice to meet you, {userName}")
+
+age = 0
+favColor = ""
+ask("Enter your age and favorite color: ">>age,favColor)
+if age >= 18: show(f"{userName} is an adult who likes {favColor}")
+elf age > 0: show(f"{userName} is a minor who likes {favColor}")
+els: show("Age not provided")
+
+show("Program complete.")
