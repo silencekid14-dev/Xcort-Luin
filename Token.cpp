@@ -18,6 +18,7 @@ static std::string tokenTypeName(TokenType type) {
         case TokenType::KEYWORD_CLS:       return "KEYWORD_CLS";
         case TokenType::KEYWORD_RTN:       return "KEYWORD_RTN";
         case TokenType::KEYWORD_SELF:      return "KEYWORD_SELF";
+        case TokenType::KEYWORD_TRY:       return "KEYWORD_TRY";
         case TokenType::KW_TRUE:           return "KW_TRUE";
         case TokenType::KW_FALSE:          return "KW_FALSE";
         case TokenType::IDENTIFIER:        return "IDENTIFIER";

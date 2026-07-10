@@ -1,0 +1,29 @@
+# ---------- get(value, "filename") : write a variable to a file ----------
+name = "anna"
+get(name, "file_name.txt")
+show("wrote name to file_name.txt")
+
+score = 97
+get(score, "score.py")
+show("wrote score to score.py")
+
+# ---------- try { ... } + get(e) : catch errors instead of crashing ----------
+try {
+    x = 10 / 0
+    show("this line never runs")
+}
+show(f"caught error: {get(e)}")
+show("program kept running after the error")
+
+# a try block with no error leaves get(e) empty
+try {
+    y = 5 + 5
+    show(f"y = {y}")
+}
+show(f"error after clean try: '{get(e)}'")
+
+# an undefined-variable error also gets caught
+try {
+    show(doesNotExist)
+}
+show(f"second error: {get(e)}")

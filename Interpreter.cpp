@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <cctype>
+#include <fstream>
 
 namespace luin {
 
@@ -33,6 +34,8 @@ void Interpreter::execute(const Stmt& stmt) {
         executeFnStmt(*fn);
     } else if (auto* cls = dynamic_cast<const ClassStmt*>(&stmt)) {
         executeClassStmt(*cls);
+    } else if (auto* tryStmt = dynamic_cast<const TryStmt*>(&stmt)) {
+        executeTryStmt(*tryStmt);
     } else if (auto* exprStmt = dynamic_cast<const ExprStmt*>(&stmt)) {
         // Run the function/method expression and discard the return value
         evaluate(*exprStmt->expression);
@@ -186,6 +189,24 @@ void Interpreter::executeLoopStmt(const LoopStmt& stmt) {
     }
 }
 
+void Interpreter::executeTryStmt(const TryStmt& stmt) {
+    try {
+        executeBlock(*stmt.body);
+        // Ran clean: clear any earlier error so get(e) doesn't report stale info.
+        m_lastError.clear();
+        m_hasError = false;
+    } catch (const ReturnException&) {
+        throw;  // control flow (rtn), not a real error — must propagate
+    } catch (const SloopException&) {
+        throw;  // control flow (sloop break), not a real error — must propagate
+    } catch (const std::exception& e) {
+        // A genuine runtime error: remember its message for get(e) and swallow
+        // it here so the program keeps running instead of crashing.
+        m_lastError = e.what();
+        m_hasError = true;
+    }
+}
+
 void Interpreter::executeRtnStmt(const RtnStmt& stmt) {
     if (stmt.value)
         throw ReturnException(evaluate(*stmt.value));
@@ -302,7 +323,51 @@ Value Interpreter::evaluateMemberAccessExpr(const MemberAccessExpr& expr) {
     }
     throw std::runtime_error("Only class instances have fields and methods");
 }
+Value Interpreter::evaluateGetBuiltin(const CallExpr& expr) {
+    const auto& args = expr.arguments;
+
+    if (args.size() == 1) {
+        // get(e) — only the literal identifier 'e' is accepted here; it reads
+        // the message from the most recent error caught by a try { ... } block.
+        auto* var = dynamic_cast<const VariableExpr*>(args[0].get());
+        if (!var || var->name != "e")
+            throw std::runtime_error(
+                "get() with a single argument must be written as get(e), "
+                "to read the last error caught by a try block");
+        return m_hasError ? m_lastError : std::string("");
+    }
+
+    if (args.size() == 2) {
+        // get(value, "filename.ext") — writes value's text form to that file,
+        // creating the file (with whatever extension is given) if it doesn't exist.
+        Value data = evaluate(*args[0]);
+        Value fileVal = evaluate(*args[1]);
+        if (!std::holds_alternative<std::string>(fileVal))
+            throw std::runtime_error("get(value, filename): filename must be a string");
+        const std::string& filename = std::get<std::string>(fileVal);
+
+        std::ofstream out(filename, std::ios::out | std::ios::trunc);
+        if (!out.is_open())
+            throw std::runtime_error("get(): could not create or open file '" + filename + "'");
+        out << valueToString(data);
+        out.close();
+
+        return std::string("");  // void-style return, like rtn with no value
+    }
+
+    throw std::runtime_error(
+        "get() expects either 1 argument (get(e)) or 2 arguments "
+        "(get(value, \"filename\"))");
+}
+
 Value Interpreter::evaluateCallExpr(const CallExpr& expr) {
+    // 'get' is a reserved builtin, handled before normal variable/function
+    // resolution so the user never has to (and can't) define their own 'get'.
+    if (auto* calleeVar = dynamic_cast<const VariableExpr*>(expr.callee.get())) {
+        if (calleeVar->name == "get")
+            return evaluateGetBuiltin(expr);
+    }
+
     Value callee = evaluate(*expr.callee);
     std::vector<Value> args;
     for (const auto& arg : expr.arguments)

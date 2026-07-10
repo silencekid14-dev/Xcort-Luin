@@ -92,6 +92,7 @@ std::unique_ptr<Stmt> Parser::parseStatement() {
     if (match(TokenType::KEYWORD_RTN))    return parseRtnStmt();
     if (match(TokenType::KEYWORD_FN))     return parseFnStmt();
     if (match(TokenType::KEYWORD_CLS))    return parseClassStmt();
+    if (match(TokenType::KEYWORD_TRY))    return parseTryStmt();
 
     // Support for expressions, variable assignments, and property mutations
     auto expr = parseExpression();
@@ -267,6 +268,12 @@ std::unique_ptr<Stmt> Parser::parseClassStmt() {
     }
     consume(TokenType::RIGHT_BRACE, "Expected '}' after class body");
     return std::make_unique<ClassStmt>(name.lexeme, std::move(methods));
+}
+
+std::unique_ptr<Stmt> Parser::parseTryStmt() {
+    // try { ... } — same brace-block shape as while/for/loop, no condition.
+    auto body = parseBlock();
+    return std::make_unique<TryStmt>(std::move(body));
 }
 
 // ---------- Expression parsing ----------

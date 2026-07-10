@@ -42,6 +42,7 @@ private:
     std::unique_ptr<Stmt> parseRtnStmt();
     std::unique_ptr<Stmt> parseFnStmt();
     std::unique_ptr<Stmt> parseClassStmt();
+    std::unique_ptr<Stmt> parseTryStmt();
 
     // Expression handling
     std::unique_ptr<Expr> parseExpression();

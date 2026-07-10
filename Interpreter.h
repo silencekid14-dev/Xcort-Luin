@@ -84,6 +84,7 @@ private:
     void executeRtnStmt(const RtnStmt& stmt);
     void executeFnStmt(const FnStmt& stmt);
     void executeClassStmt(const ClassStmt& stmt);
+    void executeTryStmt(const TryStmt& stmt);
 
     Value evaluate(const Expr& expr);
     Value evaluateStringLiteral(const StringLiteral& expr);
@@ -99,6 +100,13 @@ private:
     Value evaluateBinaryOp(const BinaryOpExpr& expr);
     Value evaluateUnaryMinusExpr(const UnaryMinusExpr& expr);
 
+    // Builtin get():
+    //   get(e)                -> returns the message of the last error caught
+    //                            by a try { ... } block (string, or "" if none)
+    //   get(value, "file.ext") -> writes value's text form to that file,
+    //                            creating the file (with any extension) if needed
+    Value evaluateGetBuiltin(const CallExpr& expr);
+
     std::string valueToString(const Value& value) const;
     bool isTruthy(const Value& value) const;
     bool valuesEqual(const Value& a, const Value& b) const;
@@ -112,6 +120,12 @@ private:
     std::vector<std::unordered_map<std::string, Value>> m_envStack;
     // Global class storage (to find Class objects by name)
     std::unordered_map<std::string, std::shared_ptr<Class>> m_classes;
+
+    // Message of the most recent error caught by a try { ... } block,
+    // readable afterwards via get(e). m_hasError distinguishes "no error
+    // caught yet" from "an error with an empty message".
+    std::string m_lastError;
+    bool m_hasError = false;
 };
 
 } // namespace luin

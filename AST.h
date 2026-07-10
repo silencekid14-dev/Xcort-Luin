@@ -193,6 +193,16 @@ public:
 
 class SloopStmt : public Stmt {};
 
+// try { ... } — runs body and, if a runtime error occurs anywhere inside it,
+// catches it instead of letting the program crash. The error message becomes
+// available afterwards through the builtin call get(e). Control-flow
+// exceptions (rtn / sloop) are NOT treated as errors and pass through.
+class TryStmt : public Stmt {
+public:
+    std::unique_ptr<BlockStmt> body;
+    explicit TryStmt(std::unique_ptr<BlockStmt> b) : body(std::move(b)) {}
+};
+
 class RtnStmt : public Stmt {
 public:
     std::unique_ptr<Expr> value;   // nullptr if void

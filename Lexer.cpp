@@ -218,6 +218,7 @@ void Lexer::identifierOrKeyword() {
     else if (lexeme == "cls")   addToken(TokenType::KEYWORD_CLS, lexeme);
     else if (lexeme == "rtn")   addToken(TokenType::KEYWORD_RTN, lexeme);
     else if (lexeme == "self")  addToken(TokenType::KEYWORD_SELF, lexeme);
+    else if (lexeme == "try")   addToken(TokenType::KEYWORD_TRY, lexeme);
     else if (lexeme == "true")  addToken(TokenType::KW_TRUE, lexeme);
     else if (lexeme == "false") addToken(TokenType::KW_FALSE, lexeme);
     else                        addToken(TokenType::IDENTIFIER, lexeme);
