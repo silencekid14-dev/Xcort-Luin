@@ -1,8 +1,10 @@
 **Luin (Silex) Programming Language**
 
-**Version:** 1.9.1
-**Date:** July 2026  
-**Author:** Xcort Team
+**Version:** 2.0
+**Date:** 10th July 2026  
+**Author:** Xcort Team  
+
+**New Update Feature On v2.0:** Introducing **try** Feature with **get( )** for errors & and making files!.
 
 Luin (also known as Silex) is a modern, simple, and powerful programming language designed for both beginners and experienced developers. It combines clean syntax with powerful features, making it suitable for real-world software development.
 
@@ -64,6 +66,42 @@ cls Player {
 
 p = Player("Hero", 100)
 p.takeDamage(30)
+```
+
+
+### 4. Try Feature & get( )
+Support for error handling and making files
+```sx
+# ---------- get(value, "filename") : write a variable to a file ----------
+name = "anna"
+get(name, "file_name.txt")
+show("wrote name to file_name.txt")
+
+score = 97
+get(score, "score.py")
+show("wrote score to score.py")
+
+# ---------- try { ... } + get(e) : catch errors instead of crashing ----------
+try {
+    x = 10 / 0
+    show("this line never runs")
+}
+show(f"caught error: {get(e)}")
+show("program kept running after the error")
+
+# a try block with no error leaves get(e) empty
+try {
+    y = 5 + 5
+    show(f"y = {y}")
+}
+show(f"error after clean try: '{get(e)}'")
+
+# an undefined-variable error also gets caught
+try {
+    show(doesNotExist)
+}
+show(f"second error: {get(e)}")
+
 ```
 
 ## How to Compile and Run
