@@ -1,7 +1,7 @@
 **Luin (Silex) Programming Language**
 
 **Version:** 2.1
-**Date:** 11th July 2026  
+**Date:** 11th July 2026.  
 **Author:** Xcort Team  
 
 **New Update Feature On v2.1:** Expanding **get( )** with **import** and **modules**
