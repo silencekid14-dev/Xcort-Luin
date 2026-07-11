@@ -1,10 +1,10 @@
 **Luin (Silex) Programming Language**
 
-**Version:** 2.0
-**Date:** 10th July 2026  
+**Version:** 2.1
+**Date:** 11th July 2026  
 **Author:** Xcort Team  
 
-**New Update Feature On v2.0:** Introducing **try** Feature with **get( )** for errors & and making files!.
+**New Update Feature On v2.1:** Expanding **get( )** with **import** and **modules**
 
 Luin (also known as Silex) is a modern, simple, and powerful programming language designed for both beginners and experienced developers. It combines clean syntax with powerful features, making it suitable for real-world software development.
 
@@ -104,6 +104,49 @@ show(f"second error: {get(e)}")
 
 ```
 
+### 5. Get( ) expansion & modules
+Supports math module(cin,pow & upto 15 more!) 
+```sx
+# ============================================================
+# demo_v2_features.sx — math module, get() read mode, del(), crt()
+# ============================================================
+
+# ---------- import math ----------
+import math
+show(math.sqrt(16))
+show(math.pow(2, 10))
+show(math.sin(math.pi / 2))
+show(math.max(3, 9))
+
+# ---------- crt(): create a file and a folder ----------
+crt("notes.txt")
+crt("data")                      # folder (no extension)
+crt("nested.txt", "data/sub")    # data/sub/nested.txt, creating the path
+
+# ---------- get() WRITE: value -> file ----------
+name = "Luin"
+get(name, "notes.txt")
+get("hello from data/sub", "data/sub/nested.txt")
+
+# ---------- get() READ: file -> variable ----------
+get("notes.txt", loadedName)
+get("data/sub/nested.txt", loadedNested)
+show(f"notes.txt contains: {loadedName}")
+show(f"nested file contains: {loadedNested}")
+
+# ---------- try/get(e) protecting a bad read ----------
+try {
+    get("this_file_does_not_exist.txt", missing)
+}
+show(f"read error safely caught: {get(e)}")
+
+# ---------- del(): clean everything up ----------
+del("notes.txt")
+del("data")     # removes the whole folder tree, including nested.txt
+show("cleanup done, program did not crash")
+
+```
+
 ## How to Compile and Run
 
 ### Requirements
@@ -134,11 +177,12 @@ g++ -std=c++17 *.cpp resource.res -o Luin_version_name.exe
 
 ## Current Status
 
-Luin is under active development. Version 1.9.1 supports:
+Luin is under active development. Version 2.1 supports:
 - Variables and basic types
 - Control flow (if/elf/els, while, for, loop)
 - Functions and classes
 - f-strings and interactive input
+- imports and more.
 
 More features (import system, modules, hardware support, etc.) are coming soon.
 
