@@ -755,14 +755,14 @@ g++ -std=c++17 *.cpp resource.res -o Luin_version_name.exe
 
 ## Current Status
 
-Luin is under active development. Version 2.1 supports:
+Luin is under active development. Version 2.1.2 supports:
 - Variables and basic types
 - Control flow (if/elf/els, while, for, loop)
 - Functions and classes
 - f-strings and interactive input
 - imports and more.
 
-More features (import system, modules, hardware support, etc.) are coming soon.
+More features (Advance import system,more modules, hardware support, etc.) are coming soon.
 
 ---
 
