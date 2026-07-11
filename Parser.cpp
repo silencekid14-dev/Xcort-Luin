@@ -93,6 +93,7 @@ std::unique_ptr<Stmt> Parser::parseStatement() {
     if (match(TokenType::KEYWORD_FN))     return parseFnStmt();
     if (match(TokenType::KEYWORD_CLS))    return parseClassStmt();
     if (match(TokenType::KEYWORD_TRY))    return parseTryStmt();
+    if (match(TokenType::KEYWORD_IMPORT)) return parseImportStmt();
 
     // Support for expressions, variable assignments, and property mutations
     auto expr = parseExpression();
@@ -274,6 +275,12 @@ std::unique_ptr<Stmt> Parser::parseTryStmt() {
     // try { ... } — same brace-block shape as while/for/loop, no condition.
     auto body = parseBlock();
     return std::make_unique<TryStmt>(std::move(body));
+}
+
+std::unique_ptr<Stmt> Parser::parseImportStmt() {
+    // import math — bare keyword + module name, no parens/quotes.
+    Token name = consume(TokenType::IDENTIFIER, "Expected module name after 'import'");
+    return std::make_unique<ImportStmt>(name.lexeme);
 }
 
 // ---------- Expression parsing ----------

@@ -1,0 +1,37 @@
+# ============================================================
+# demo_v2_features.sx — math module, get() read mode, del(), crt()
+# ============================================================
+
+# ---------- import math ----------
+import math
+show(math.sqrt(16))
+show(math.pow(2, 10))
+show(math.sin(math.pi / 2))
+show(math.max(3, 9))
+
+# ---------- crt(): create a file and a folder ----------
+crt("notes.txt")
+crt("data")                      # folder (no extension)
+crt("nested.txt", "data/sub")    # data/sub/nested.txt, creating the path
+
+# ---------- get() WRITE: value -> file ----------
+name = "Luin"
+get(name, "notes.txt")
+get("hello from data/sub", "data/sub/nested.txt")
+
+# ---------- get() READ: file -> variable ----------
+get("notes.txt", loadedName)
+get("data/sub/nested.txt", loadedNested)
+show(f"notes.txt contains: {loadedName}")
+show(f"nested file contains: {loadedNested}")
+
+# ---------- try/get(e) protecting a bad read ----------
+try {
+    get("this_file_does_not_exist.txt", missing)
+}
+show(f"read error safely caught: {get(e)}")
+
+# ---------- del(): clean everything up ----------
+del("notes.txt")
+del("data")     # removes the whole folder tree, including nested.txt
+show("cleanup done, program did not crash")

@@ -1,8 +1,10 @@
 #include "Interpreter.h"
+#include "math.h"
 #include <stdexcept>
 #include <sstream>
 #include <cctype>
 #include <fstream>
+#include <filesystem>
 
 namespace luin {
 
@@ -36,6 +38,8 @@ void Interpreter::execute(const Stmt& stmt) {
         executeClassStmt(*cls);
     } else if (auto* tryStmt = dynamic_cast<const TryStmt*>(&stmt)) {
         executeTryStmt(*tryStmt);
+    } else if (auto* importStmt = dynamic_cast<const ImportStmt*>(&stmt)) {
+        executeImportStmt(*importStmt);
     } else if (auto* exprStmt = dynamic_cast<const ExprStmt*>(&stmt)) {
         // Run the function/method expression and discard the return value
         evaluate(*exprStmt->expression);
@@ -207,6 +211,15 @@ void Interpreter::executeTryStmt(const TryStmt& stmt) {
     }
 }
 
+void Interpreter::executeImportStmt(const ImportStmt& stmt) {
+    // Only "math" exists right now; add more native modules here as needed.
+    if (stmt.moduleName == "math") {
+        m_envStack.back()[stmt.moduleName] = createMathModule();
+    } else {
+        throw std::runtime_error("Unknown module '" + stmt.moduleName + "'");
+    }
+}
+
 void Interpreter::executeRtnStmt(const RtnStmt& stmt) {
     if (stmt.value)
         throw ReturnException(evaluate(*stmt.value));
@@ -321,7 +334,14 @@ Value Interpreter::evaluateMemberAccessExpr(const MemberAccessExpr& expr) {
         
         throw std::runtime_error("Field or Method '" + expr.member + "' not found");
     }
-    throw std::runtime_error("Only class instances have fields and methods");
+    if (std::holds_alternative<std::shared_ptr<Module>>(obj)) {
+        auto mod = std::get<std::shared_ptr<Module>>(obj);
+        auto it = mod->members.find(expr.member);
+        if (it == mod->members.end())
+            throw std::runtime_error("Module '" + mod->name + "' has no member '" + expr.member + "'");
+        return it->second;
+    }
+    throw std::runtime_error("Only class instances and modules have fields and methods");
 }
 Value Interpreter::evaluateGetBuiltin(const CallExpr& expr) {
     const auto& args = expr.arguments;
@@ -338,8 +358,39 @@ Value Interpreter::evaluateGetBuiltin(const CallExpr& expr) {
     }
 
     if (args.size() == 2) {
-        // get(value, "filename.ext") — writes value's text form to that file,
-        // creating the file (with whatever extension is given) if it doesn't exist.
+        // Two shapes share this arity, disambiguated by which argument is a
+        // literal string/f-string and which is a bare variable name:
+        //   get("file.ext", varName)  -> READ:  arg0 is a literal filename,
+        //                                        arg1 is the destination variable
+        //   get(value, "file.ext")    -> WRITE: arg0 is the value (default)
+        bool arg0IsStringLiteral = dynamic_cast<const StringLiteral*>(args[0].get()) ||
+                                    dynamic_cast<const FStringLiteral*>(args[0].get());
+        auto* arg1Var = dynamic_cast<const VariableExpr*>(args[1].get());
+
+        if (arg0IsStringLiteral && arg1Var) {
+            // READ: get("file.ext", varName) — load the file's contents into varName.
+            Value fileVal = evaluate(*args[0]);
+            const std::string& filename = std::get<std::string>(fileVal);
+
+            std::ifstream in(filename, std::ios::in | std::ios::binary);
+            if (!in.is_open())
+                throw std::runtime_error("get(): could not open file '" + filename + "' for reading");
+            std::ostringstream contents;
+            contents << in.rdbuf();
+            in.close();
+
+            Value data = contents.str();
+            // Same scope rule as normal assignment: update if it exists anywhere
+            // in the visible chain, otherwise create it in the current scope.
+            if (Value* existing = findVariable(arg1Var->name))
+                *existing = data;
+            else
+                m_envStack.back()[arg1Var->name] = data;
+            return data;
+        }
+
+        // WRITE: get(value, "filename.ext") — writes value's text form to that
+        // file, creating the file (with whatever extension is given) if needed.
         Value data = evaluate(*args[0]);
         Value fileVal = evaluate(*args[1]);
         if (!std::holds_alternative<std::string>(fileVal))
@@ -357,21 +408,103 @@ Value Interpreter::evaluateGetBuiltin(const CallExpr& expr) {
 
     throw std::runtime_error(
         "get() expects either 1 argument (get(e)) or 2 arguments "
-        "(get(value, \"filename\"))");
+        "(get(value, \"filename\") to write, or get(\"filename\", varName) to read)");
+}
+
+Value Interpreter::evaluateDelBuiltin(const CallExpr& expr) {
+    const auto& args = expr.arguments;
+    if (args.empty() || args.size() > 2)
+        throw std::runtime_error(
+            "del() expects 1 argument (del(\"name\")) or 2 arguments (del(\"name\", \"path\"))");
+
+    Value nameVal = evaluate(*args[0]);
+    if (!std::holds_alternative<std::string>(nameVal))
+        throw std::runtime_error("del(): file/folder name must be a string");
+    const std::string& name = std::get<std::string>(nameVal);
+
+    std::filesystem::path target = name;
+    if (args.size() == 2) {
+        Value pathVal = evaluate(*args[1]);
+        if (!std::holds_alternative<std::string>(pathVal))
+            throw std::runtime_error("del(): path must be a string");
+        target = std::filesystem::path(std::get<std::string>(pathVal)) / name;
+    }
+
+    std::error_code ec;
+    if (!std::filesystem::exists(target, ec))
+        throw std::runtime_error("del(): '" + target.string() + "' does not exist");
+
+    // remove_all works for both a single file and a whole folder (recursively).
+    std::filesystem::remove_all(target, ec);
+    if (ec)
+        throw std::runtime_error("del(): failed to delete '" + target.string() + "': " + ec.message());
+
+    return std::string("");
+}
+
+Value Interpreter::evaluateCrtBuiltin(const CallExpr& expr) {
+    const auto& args = expr.arguments;
+    if (args.empty() || args.size() > 2)
+        throw std::runtime_error(
+            "crt() expects 1 argument (crt(\"name\")) or 2 arguments (crt(\"name\", \"path\"))");
+
+    Value nameVal = evaluate(*args[0]);
+    if (!std::holds_alternative<std::string>(nameVal))
+        throw std::runtime_error("crt(): file/folder name must be a string");
+    const std::string& name = std::get<std::string>(nameVal);
+
+    std::filesystem::path target = name;
+    if (args.size() == 2) {
+        Value pathVal = evaluate(*args[1]);
+        if (!std::holds_alternative<std::string>(pathVal))
+            throw std::runtime_error("crt(): path must be a string");
+        std::filesystem::path dir(std::get<std::string>(pathVal));
+        std::error_code dirEc;
+        if (!dir.empty())
+            std::filesystem::create_directories(dir, dirEc);  // make sure the path exists
+        target = dir / name;
+    }
+
+    // A name with no extension is treated as a folder; otherwise it's a file
+    // (matches del()'s "folder_name" vs "file_name.ext" convention).
+    bool isFolder = !target.has_extension();
+    std::error_code ec;
+
+    if (isFolder) {
+        std::filesystem::create_directories(target, ec);
+        if (ec)
+            throw std::runtime_error("crt(): failed to create folder '" + target.string() + "': " + ec.message());
+    } else {
+        if (target.has_parent_path())
+            std::filesystem::create_directories(target.parent_path(), ec);
+        std::ofstream out(target);
+        if (!out.is_open())
+            throw std::runtime_error("crt(): failed to create file '" + target.string() + "'");
+        out.close();
+    }
+
+    return std::string("");
 }
 
 Value Interpreter::evaluateCallExpr(const CallExpr& expr) {
-    // 'get' is a reserved builtin, handled before normal variable/function
-    // resolution so the user never has to (and can't) define their own 'get'.
+    // 'get' / 'del' / 'crt' are reserved builtins, handled before normal
+    // variable/function resolution so the user never has to (and can't)
+    // redefine them.
     if (auto* calleeVar = dynamic_cast<const VariableExpr*>(expr.callee.get())) {
-        if (calleeVar->name == "get")
-            return evaluateGetBuiltin(expr);
+        if (calleeVar->name == "get") return evaluateGetBuiltin(expr);
+        if (calleeVar->name == "del") return evaluateDelBuiltin(expr);
+        if (calleeVar->name == "crt") return evaluateCrtBuiltin(expr);
     }
 
     Value callee = evaluate(*expr.callee);
     std::vector<Value> args;
     for (const auto& arg : expr.arguments)
         args.push_back(evaluate(*arg));
+
+    if (std::holds_alternative<std::shared_ptr<NativeFunction>>(callee)) {
+        auto native = std::get<std::shared_ptr<NativeFunction>>(callee);
+        return native->fn(args);
+    }
 
     if (std::holds_alternative<std::shared_ptr<Function>>(callee)) {
         auto func = std::get<std::shared_ptr<Function>>(callee);
@@ -567,6 +700,10 @@ std::string Interpreter::valueToString(const Value& value) const {
         return "<class " + std::get<std::shared_ptr<Class>>(value)->name + ">";
     if (std::holds_alternative<std::shared_ptr<Function>>(value))
         return "<function>";
+    if (std::holds_alternative<std::shared_ptr<Module>>(value))
+        return "<module " + std::get<std::shared_ptr<Module>>(value)->name + ">";
+    if (std::holds_alternative<std::shared_ptr<NativeFunction>>(value))
+        return "<native function " + std::get<std::shared_ptr<NativeFunction>>(value)->name + ">";
     return "???";
 }
 
@@ -586,6 +723,10 @@ bool Interpreter::isTruthy(const Value& value) const {
     if (std::holds_alternative<std::shared_ptr<Class>>(value))
         return true;
     if (std::holds_alternative<std::shared_ptr<Function>>(value))
+        return true;
+    if (std::holds_alternative<std::shared_ptr<Module>>(value))
+        return true;
+    if (std::holds_alternative<std::shared_ptr<NativeFunction>>(value))
         return true;
     return false;
 }

@@ -133,3 +133,7 @@ elf age > 0: show(f"{userName} is a minor who likes {favColor}")
 els: show("Age not provided")
 
 show("Program complete.")
+
+crt("notes.txt")
+crt("data")                      # folder (no extension)
+crt("nested.txt", "data/sub")

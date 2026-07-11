@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include <exception>
+#include <functional>
 
 namespace luin {
 
@@ -17,6 +18,8 @@ struct ValueArray;
 struct ClassInstance;
 struct Class;
 struct Function;
+struct Module;
+struct NativeFunction;
 
 // Runtime value
 using Value = std::variant<
@@ -27,7 +30,9 @@ using Value = std::variant<
     std::shared_ptr<ValueArray>,
     std::shared_ptr<ClassInstance>,
     std::shared_ptr<Class>,
-    std::shared_ptr<Function>
+    std::shared_ptr<Function>,
+    std::shared_ptr<Module>,
+    std::shared_ptr<NativeFunction>
 >;
 
 struct ValueArray {
@@ -53,6 +58,21 @@ struct Function {
     // Add "= nullptr" to the first parameter here:
     Function(FnStmt* d = nullptr, std::shared_ptr<ClassInstance> clos = nullptr)
         : def(d), closure(clos) {}
+};
+
+// A callable implemented in C++ rather than in Luin (e.g. math.sqrt).
+// Modules like "math" expose their functions as these.
+struct NativeFunction {
+    std::string name;
+    std::function<Value(std::vector<Value>&)> fn;
+};
+
+// A native namespace loaded via `import <name>`, e.g. `import math` then
+// `math.sqrt(x)` / `math.pi`. Members are either NativeFunction callables
+// or plain constant Values (like math.pi).
+struct Module {
+    std::string name;
+    std::unordered_map<std::string, Value> members;
 };
 
 class SloopException : public std::exception {
@@ -85,6 +105,7 @@ private:
     void executeFnStmt(const FnStmt& stmt);
     void executeClassStmt(const ClassStmt& stmt);
     void executeTryStmt(const TryStmt& stmt);
+    void executeImportStmt(const ImportStmt& stmt);
 
     Value evaluate(const Expr& expr);
     Value evaluateStringLiteral(const StringLiteral& expr);
@@ -101,11 +122,29 @@ private:
     Value evaluateUnaryMinusExpr(const UnaryMinusExpr& expr);
 
     // Builtin get():
-    //   get(e)                -> returns the message of the last error caught
-    //                            by a try { ... } block (string, or "" if none)
-    //   get(value, "file.ext") -> writes value's text form to that file,
-    //                            creating the file (with any extension) if needed
+    //   get(e)                        -> returns the message of the last error
+    //                                    caught by a try { ... } block (string,
+    //                                    or "" if none)
+    //   get(value, "file.ext")        -> WRITE: writes value's text form to
+    //                                    that file, creating it if needed
+    //   get("file.ext", varName)      -> READ: reads that file's contents into
+    //                                    the (possibly new) variable varName.
+    //                                    Distinguished from WRITE by the first
+    //                                    argument being a literal string/f-string
+    //                                    and the second a bare variable name.
     Value evaluateGetBuiltin(const CallExpr& expr);
+
+    // Builtin del(): deletes a file or folder (recursively).
+    //   del("name.ext")             -> deletes name.ext from the program's folder
+    //   del("name.ext", "C:\\path") -> deletes <path>/name.ext
+    //   del("folder_name")          -> deletes a folder (no extension in the name)
+    Value evaluateDelBuiltin(const CallExpr& expr);
+
+    // Builtin crt(): creates a file or folder.
+    //   crt("name.ext")             -> creates an empty name.ext in the program's folder
+    //   crt("name.ext", "C:\\path") -> creates it at <path>/name.ext
+    //   crt("folder_name")          -> creates a folder (name has no extension)
+    Value evaluateCrtBuiltin(const CallExpr& expr);
 
     std::string valueToString(const Value& value) const;
     bool isTruthy(const Value& value) const;

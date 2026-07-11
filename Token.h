@@ -22,6 +22,7 @@ enum class TokenType {
     KEYWORD_RTN,
     KEYWORD_SELF,
     KEYWORD_TRY,
+    KEYWORD_IMPORT,
 
     // Literal keywords
     KW_TRUE,

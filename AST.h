@@ -193,6 +193,14 @@ public:
 
 class SloopStmt : public Stmt {};
 
+// import math — loads a native module (currently just "math") into scope
+// under its own name, so its members can be used as math.sqrt(x), math.pi, etc.
+class ImportStmt : public Stmt {
+public:
+    std::string moduleName;
+    explicit ImportStmt(std::string name) : moduleName(std::move(name)) {}
+};
+
 // try { ... } — runs body and, if a runtime error occurs anywhere inside it,
 // catches it instead of letting the program crash. The error message becomes
 // available afterwards through the builtin call get(e). Control-flow
