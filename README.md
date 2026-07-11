@@ -1,10 +1,10 @@
 **Luin (Silex) Programming Language**
 
-**Version:** 2.1
-**Date:** 11th July 2026.  
+**Version:** 2.1.2
+**Date:** 12th July 2026.  
 **Author:** Xcort Team  
 
-**New Update Feature On v2.1:** Expanding **get( )** with **import** and **modules**
+**New Update Feature On v2.1.2:** Bug Fixing and Enhancing array indexing capabilities.
 
 Luin (also known as Silex) is a modern, simple, and powerful programming language designed for both beginners and experienced developers. It combines clean syntax with powerful features, making it suitable for real-world software development.
 
@@ -145,6 +145,584 @@ del("notes.txt")
 del("data")     # removes the whole folder tree, including nested.txt
 show("cleanup done, program did not crash")
 
+```
+
+### 6. Bug Fixes and Extended capabilities.
+Now supports indexing and fixed bugs, has shown in the code below
+```sx
+# ============================================================
+# EMPLOYEE MANAGEMENT SYSTEM - Luin v2.1.2 & 2.1 only!
+# Corrected Syntax - Based on Official Examples
+# Demonstrates: Classes, File I/O, Error Handling, Math, Loops
+# ============================================================
+
+import math
+
+# ---------- Employee Class ----------
+cls Employee {
+    fn init(id, name, salary, department) {
+        self.id = id
+        self.name = name
+        self.salary = salary
+        self.department = department
+        self.bonus = 0
+    }
+
+    fn giveBonus(percent) {
+        self.bonus = self.salary * (percent / 100)
+        self.salary = self.salary + self.bonus
+        show(f"Bonus of {percent}% given to {self.name}")
+        show(f"New salary: {self.salary} (Bonus: {self.bonus})")
+    }
+
+    fn display() {
+        show(f"ID: {self.id} | Name: {self.name} | Dept: {self.department} | Salary: {self.salary}")
+    }
+
+    fn getAnnualSalary() {
+        rtn self.salary * 12
+    }
+}
+
+# ---------- Company Class ----------
+cls Company {
+    fn init(name) {
+        self.name = name
+        self.employees = []
+        self.employeeCount = 0
+    }
+
+    fn hire(employee) {
+        self.employees = self.employees + [employee]
+        self.employeeCount = self.employeeCount + 1
+        show(f"Hired: {employee.name}")
+        try {
+            get(f"Hired: {employee.name} at {self.name}", "hire_log.txt")
+        }
+        show(f"Log written to hire_log.txt")
+    }
+
+    fn fire(employeeId) {
+        try {
+            newList = []
+            i = 0
+            while i < len(self.employees) {
+                emp = self.employees[i]
+                if emp.id != employeeId: newList = newList + [emp]
+                els: show(f"Fired: {emp.name}")
+                i = i + 1
+            }
+            self.employees = newList
+            self.employeeCount = self.employeeCount - 1
+        }
+        show(f"Fire operation completed. Error: {get(e)}")
+    }
+
+    fn listAll() {
+        show(f"=== {self.name} - Employee List ({self.employeeCount} employees) ===")
+        i = 0
+        while i < len(self.employees) {
+            self.employees[i].display()
+            i = i + 1
+        }
+    }
+
+    fn getTotalPayroll() {
+        total = 0
+        i = 0
+        while i < len(self.employees) {
+            total = total + self.employees[i].getAnnualSalary()
+            i = i + 1
+        }
+        rtn total
+    }
+
+    fn getAverageSalary() {
+        if self.employeeCount > 0: rtn self.getTotalPayroll() / self.employeeCount
+        rtn 0
+    }
+
+    fn saveToFile(filename) {
+        try {
+            data = f"Company: {self.name}\n"
+            data = data + f"Employees: {self.employeeCount}\n"
+            data = data + "---\n"
+            i = 0
+            while i < len(self.employees) {
+                emp = self.employees[i]
+                data = data + f"{emp.id},{emp.name},{emp.salary},{emp.department}\n"
+                i = i + 1
+            }
+            get(data, filename)
+            show(f"Saved company data to {filename}")
+        }
+        show(f"Save error: {get(e)}")
+    }
+
+    fn loadFromFile(filename) {
+        try {
+            get(filename, fileData)
+            show(f"Loaded data from {filename}")
+            show(f"File contents: {fileData}")
+        }
+        show(f"Load error: {get(e)}")
+    }
+
+    fn findHighestPaid() {
+        if self.employeeCount == 0: {
+            show("No employees")
+            rtn
+        }
+        highest = self.employees[0]
+        i = 1
+        while i < len(self.employees) {
+            if self.employees[i].salary > highest.salary: highest = self.employees[i]
+            i = i + 1
+        }
+        show(f"Highest paid employee:")
+        highest.display()
+        rtn highest
+    }
+
+    fn findDepartmentStats() {
+        # Simple department counter (limited to 3 depts for demo)
+        dept1 = ""
+        dept2 = ""
+        dept3 = ""
+        count1 = 0
+        count2 = 0
+        count3 = 0
+
+        i = 0
+        while i < len(self.employees) {
+            dept = self.employees[i].department
+            if dept1 == "": {
+                dept1 = dept
+                count1 = 1
+            } elf dept == dept1: {
+                count1 = count1 + 1
+            } elf dept2 == "": {
+                dept2 = dept
+                count2 = 1
+            } elf dept == dept2: {
+                count2 = count2 + 1
+            } elf dept3 == "": {
+                dept3 = dept
+                count3 = 1
+            } elf dept == dept3: {
+                count3 = count3 + 1
+            }
+            i = i + 1
+        }
+
+        show("=== Department Statistics ===")
+        if count1 > 0: show(f"{dept1}: {count1} employees")
+        if count2 > 0: show(f"{dept2}: {count2} employees")
+        if count3 > 0: show(f"{dept3}: {count3} employees")
+    }
+}
+
+# ---------- Helper Functions ----------
+fn createEmployee(id, name, salary, department) {
+    try {
+        if salary <= 0: {
+            show("Error: Salary must be positive!")
+            rtn
+        }
+        emp = Employee(id, name, salary, department)
+        show(f"Created employee: {name}")
+        rtn emp
+    }
+    show(f"Error creating employee: {get(e)}")
+    rtn
+}
+
+fn calculateStats(numbers) {
+    show("=== Math Stats ===")
+    sum = 0
+    i = 0
+    while i < len(numbers) {
+        sum = sum + numbers[i]
+        i = i + 1
+    }
+    avg = sum / len(numbers)
+    show(f"Sum: {sum}")
+    show(f"Average: {avg}")
+    show(f"Max: {math.max(numbers)}")
+    show(f"Square root of sum: {math.sqrt(sum)}")
+}
+
+# ============================================================
+# MAIN PROGRAM
+# ============================================================
+
+show("========================================")
+show("   EMPLOYEE MANAGEMENT SYSTEM v2.1")
+show("   Built with Luin (SILEX)")
+show("========================================")
+
+# ---------- Create Company ----------
+company = Company("Xcort Industries")
+show(f"Welcome to {company.name}!")
+
+# ---------- Hire Employees ----------
+show("\n--- Hiring Employees ---")
+emp1 = createEmployee(101, "Alice Johnson", 75000, "Engineering")
+if emp1: company.hire(emp1)
+
+emp2 = createEmployee(102, "Bob Smith", 68000, "Marketing")
+if emp2: company.hire(emp2)
+
+emp3 = createEmployee(103, "Carol White", 92000, "Engineering")
+if emp3: company.hire(emp3)
+
+emp4 = createEmployee(104, "David Brown", 54000, "Sales")
+if emp4: company.hire(emp4)
+
+emp5 = createEmployee(105, "Eva Green", 81000, "Engineering")
+if emp5: company.hire(emp5)
+
+# ---------- List All Employees ----------
+show("\n--- Employee Directory ---")
+company.listAll()
+
+# ---------- Give Bonus to Engineering Team ----------
+show("\n--- Giving Bonuses ---")
+i = 0
+while i < len(company.employees) {
+    emp = company.employees[i]
+    if emp.department == "Engineering": emp.giveBonus(10)  # 10% bonus
+    i = i + 1
+}
+
+# ---------- Company Statistics ----------
+show("\n--- Company Statistics ---")
+show(f"Total Annual Payroll: ${company.getTotalPayroll()}")
+show(f"Average Annual Salary: ${company.getAverageSalary()}")
+
+# ---------- Find Highest Paid ----------
+show("\n--- Top Employee ---")
+company.findHighestPaid()
+
+# ---------- Department Stats ----------
+company.findDepartmentStats()
+
+# ---------- Save to File ----------
+show("\n--- Saving Data ---")
+company.saveToFile("company_data.txt")
+
+# ---------- Load from File (with error handling) ----------
+show("\n--- Loading Data ---")
+company.loadFromFile("company_data.txt")
+
+# ---------- Try loading a non-existent file (error handling demo) ----------
+show("\n--- Error Handling Demo ---")
+try {
+    get("non_existent_file.txt", missingData)
+    show("This line won't run")
+}
+show(f"Error caught: {get(e)}")
+
+# ---------- Math Module Demo ----------
+show("\n--- Math Module Demo ---")
+numbers = [10, 25, 30, 45, 50]
+calculateStats(numbers)
+
+# ---------- File Creation Demo ----------
+show("\n--- File Creation Demo ---")
+crt("reports")
+crt("summary.txt", "reports")
+show("Created reports folder and summary.txt inside it")
+
+# ---------- Cleanup ----------
+show("\n--- Cleanup ---")
+del("company_data.txt")
+del("hire_log.txt")
+del("reports")
+show("Cleanup complete!")
+
+# ---------- Program End ----------
+show("\n========================================")
+show("   Program completed successfully!")
+show("   Thank you for using Luin v2.1")
+show("========================================")
+```
+
+### 7. Old code supported with and without Len( )
+Supports Len( ), also added ***else*** has an alias of **els** , and supporting if statements with {...} and with ":" etc.
+```sx
+# ============================================================
+# EMPLOYEE MANAGEMENT SYSTEM - Luin v2.1.2 Compatible and 2.1 only!
+# No len(), no null, no indexing, no array concat.
+# ============================================================
+
+import math
+
+# ---------- Employee Class ----------
+cls Employee {
+    fn init(id, name, salary, department) {
+        self.id = id
+        self.name = name
+        self.salary = salary
+        self.department = department
+        self.bonus = 0
+    }
+
+    fn giveBonus(percent) {
+        self.bonus = self.salary * (percent / 100)
+        self.salary = self.salary + self.bonus
+        show(f"Bonus of {percent}% given to {self.name}")
+        show(f"New salary: {self.salary} (Bonus: {self.bonus})")
+    }
+
+    fn display() {
+        show(f"ID: {self.id} | Name: {self.name} | Dept: {self.department} | Salary: {self.salary}")
+    }
+
+    fn getAnnualSalary() {
+        rtn self.salary * 12
+    }
+}
+
+# ---------- Company Class ----------
+cls Company {
+    fn init(name, employees) {
+        self.name = name
+        self.employees = employees
+        # Count employees manually (no len)
+        self.employeeCount = 0
+        for emp employees {
+            self.employeeCount = self.employeeCount + 1
+        }
+    }
+
+    fn listAll() {
+        show(f"=== {self.name} - Employee List ({self.employeeCount} employees) ===")
+        for emp self.employees {
+            emp.display()
+        }
+    }
+
+    fn getTotalPayroll() {
+        total = 0
+        for emp self.employees {
+            total = total + emp.getAnnualSalary()
+        }
+        rtn total
+    }
+
+    fn getAverageSalary() {
+        if self.employeeCount > 0 :  rtn self.getTotalPayroll() / self.employeeCount
+        rtn 0
+    }
+
+    fn findHighestPaid() {
+        if self.employeeCount == 0 {
+            show("No employees")
+            rtn
+        }
+        # Use indexing (now supported) to grab the first employee, then
+        # compare the rest against it.
+        highest = self.employees[0]
+        i = 1
+        while i < len(self.employees) {
+            if self.employees[i].salary > highest.salary {
+                highest = self.employees[i]
+            }
+            i = i + 1
+        }
+        show("Highest paid employee:")
+        highest.display()
+        rtn highest
+    }
+
+    # Department stats using only for loops
+    fn findDepartmentStats() {
+        dept1 = ""
+        dept2 = ""
+        dept3 = ""
+        count1 = 0
+        count2 = 0
+        count3 = 0
+
+        for emp in self.employees {
+            dept = emp.department
+            if dept1 == "" {
+                dept1 = dept
+                count1 = 1
+            } elf dept == dept1 {
+                count1 = count1 + 1
+            } elf dept2 == "" {
+                dept2 = dept
+                count2 = 1
+            } elf dept == dept2 {
+                count2 = count2 + 1
+            } elf dept3 == "" {
+                dept3 = dept
+                count3 = 1
+            } elf dept == dept3 {
+                count3 = count3 + 1
+            }
+        }
+
+        show("=== Department Statistics ===")
+        if count1 > 0 { show(f"{dept1}: {count1} employees") }
+        if count2 > 0 { show(f"{dept2}: {count2} employees") }
+        if count3 > 0 { show(f"{dept3}: {count3} employees") }
+    }
+
+    fn saveToFile(filename) {
+        try {
+            data = f"Company: {self.name}\n"
+            data = data + f"Employees: {self.employeeCount}\n"
+            data = data + "---\n"
+            for emp in self.employees {
+                data = data + f"{emp.id},{emp.name},{emp.salary},{emp.department}\n"
+            }
+            get(data, filename)
+            show(f"Saved company data to {filename}")
+        }
+        show(f"Save error: {get(e)}")
+    }
+
+    fn loadFromFile(filename) {
+        try {
+            get(filename, fileData)
+            show(f"Loaded data from {filename}")
+            show(f"File contents: {fileData}")
+        }
+        show(f"Load error: {get(e)}")
+    }
+}
+
+# ---------- Helper Functions ----------
+fn createEmployee(id, name, salary, department) {
+    try {
+        if salary <= 0 {
+            show("Error: Salary must be positive!")
+            rtn
+        }
+        emp = Employee(id, name, salary, department)
+        show(f"Created employee: {name}")
+        rtn emp
+    }
+    show(f"Error creating employee: {get(e)}")
+    rtn
+}
+
+# Compute stats without len and without math.max(array)
+fn calculateStats(numbers) {
+    show("=== Math Stats ===")
+    sum = 0
+    count = 0
+    maxVal = -999999999   # a very small number (or use a flag)
+    minVal = 999999999
+    first = true
+    for n in numbers {
+        sum = sum + n
+        count = count + 1
+        if first {
+            maxVal = n
+            minVal = n
+            first = false
+        } else {
+            if n > maxVal { maxVal = n }
+            if n < minVal { minVal = n }
+        }
+    }
+    avg = sum / count
+    show(f"Sum: {sum}")
+    show(f"Average: {avg}")
+    show(f"Max: {maxVal}")
+    show(f"Min: {minVal}")
+    show(f"Square root of sum: {math.sqrt(sum)}")
+}
+
+# ============================================================
+# MAIN PROGRAM
+# ============================================================
+
+show("========================================")
+show("   EMPLOYEE MANAGEMENT SYSTEM v2.1")
+show("   Built with Luin (SILEX)")
+show("========================================")
+
+# ---------- Create Employees ----------
+emp1 = createEmployee(101, "Alice Johnson", 75000, "Engineering")
+emp2 = createEmployee(102, "Bob Smith", 68000, "Marketing")
+emp3 = createEmployee(103, "Carol White", 92000, "Engineering")
+emp4 = createEmployee(104, "David Brown", 54000, "Sales")
+emp5 = createEmployee(105, "Eva Green", 81000, "Engineering")
+
+# Put them in an array literal (no dynamic addition)
+employees = [emp1, emp2, emp3, emp4, emp5]
+
+# ---------- Create Company ----------
+company = Company("Xcort Industries", employees)
+show(f"Welcome to {company.name}!")
+
+# ---------- List All Employees ----------
+show("\n--- Employee Directory ---")
+company.listAll()
+
+# ---------- Give Bonus to Engineering Team ----------
+show("\n--- Giving Bonuses ---")
+for emp in company.employees {
+    if emp.department == "Engineering" {
+        emp.giveBonus(10)   # 10% bonus
+    }
+}
+
+# ---------- Company Statistics ----------
+show("\n--- Company Statistics ---")
+show(f"Total Annual Payroll: ${company.getTotalPayroll()}")
+show(f"Average Annual Salary: ${company.getAverageSalary()}")
+
+# ---------- Find Highest Paid ----------
+show("\n--- Top Employee ---")
+company.findHighestPaid()
+
+# ---------- Department Stats ----------
+company.findDepartmentStats()
+
+# ---------- Save to File ----------
+show("\n--- Saving Data ---")
+company.saveToFile("company_data.txt")
+
+# ---------- Load from File (with error handling) ----------
+show("\n--- Loading Data ---")
+company.loadFromFile("company_data.txt")
+
+# ---------- Try loading a non-existent file (error handling demo) ----------
+show("\n--- Error Handling Demo ---")
+try {
+    get("non_existent_file.txt", missingData)
+    show("This line won't run")
+}
+show(f"Error caught: {get(e)}")
+
+# ---------- Math Module Demo ----------
+show("\n--- Math Module Demo ---")
+numbers = [10, 25, 30, 45, 50]
+calculateStats(numbers)
+
+# ---------- File Creation Demo ----------
+show("\n--- File Creation Demo ---")
+crt("reports")
+crt("summary.txt", "reports")
+show("Created reports folder and summary.txt inside it")
+
+# ---------- Cleanup ----------
+show("\n--- Cleanup ---")
+del("company_data.txt")
+del("reports")
+show("Cleanup complete!")
+
+# ---------- Program End ----------
+show("\n========================================")
+show("   Program completed successfully!")
+show("   Thank you for using Luin v2.1")
+show("========================================")
 ```
 
 ## How to Compile and Run
