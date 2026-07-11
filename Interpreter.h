@@ -106,6 +106,7 @@ private:
     void executeClassStmt(const ClassStmt& stmt);
     void executeTryStmt(const TryStmt& stmt);
     void executeImportStmt(const ImportStmt& stmt);
+    void executeIndexAssignmentStmt(const IndexAssignmentStmt& stmt);
 
     Value evaluate(const Expr& expr);
     Value evaluateStringLiteral(const StringLiteral& expr);
@@ -118,6 +119,7 @@ private:
     Value evaluateMemberAccessExpr(const MemberAccessExpr& expr);
     Value evaluateCallExpr(const CallExpr& expr);
     Value evaluateArrayLiteral(const ArrayLiteral& expr);
+    Value evaluateIndexExpr(const IndexExpr& expr);
     Value evaluateBinaryOp(const BinaryOpExpr& expr);
     Value evaluateUnaryMinusExpr(const UnaryMinusExpr& expr);
 
@@ -127,11 +129,14 @@ private:
     //                                    or "" if none)
     //   get(value, "file.ext")        -> WRITE: writes value's text form to
     //                                    that file, creating it if needed
-    //   get("file.ext", varName)      -> READ: reads that file's contents into
+    //   get(filename, varName)        -> READ: reads that file's contents into
     //                                    the (possibly new) variable varName.
-    //                                    Distinguished from WRITE by the first
-    //                                    argument being a literal string/f-string
-    //                                    and the second a bare variable name.
+    //                                    filename may be a literal string/f-string
+    //                                    or a variable holding a filename.
+    //                                    Distinguished from WRITE by varName being
+    //                                    a bare identifier that isn't currently
+    //                                    holding a string (i.e. not a valid WRITE
+    //                                    filename target).
     Value evaluateGetBuiltin(const CallExpr& expr);
 
     // Builtin del(): deletes a file or folder (recursively).
@@ -145,6 +150,10 @@ private:
     //   crt("name.ext", "C:\\path") -> creates it at <path>/name.ext
     //   crt("folder_name")          -> creates a folder (name has no extension)
     Value evaluateCrtBuiltin(const CallExpr& expr);
+
+    // Builtin len(): returns the element count of an array, or the character
+    // count of a string. len(arr) / len(str)
+    Value evaluateLenBuiltin(const CallExpr& expr);
 
     std::string valueToString(const Value& value) const;
     bool isTruthy(const Value& value) const;

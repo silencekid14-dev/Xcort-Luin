@@ -95,19 +95,30 @@ std::unique_ptr<Stmt> Parser::parseStatement() {
     if (match(TokenType::KEYWORD_TRY))    return parseTryStmt();
     if (match(TokenType::KEYWORD_IMPORT)) return parseImportStmt();
 
+    // A bare '{' starts a block, which can stand in anywhere a single
+    // statement is expected (e.g. "if cond { ... }" with no ':').
+    if (check(TokenType::LEFT_BRACE)) {
+        return parseBlock();
+    }
+
     // Support for expressions, variable assignments, and property mutations
     auto expr = parseExpression();
     
     // Check if it's an assignment operation
     if (match(TokenType::EQUALS)) {
         auto value = parseExpression();
-        
-        // 1. Is it a field assignment (e.g., self.hp = hp)?
+
+        // 1. Is it an index assignment (e.g., self.employees[i] = emp)?
+        if (auto* idx = dynamic_cast<IndexExpr*>(expr.get())) {
+            return std::make_unique<IndexAssignmentStmt>(std::move(idx->object), std::move(idx->index), std::move(value));
+        }
+
+        // 2. Is it a field assignment (e.g., self.hp = hp)?
         if (auto* mem = dynamic_cast<MemberAccessExpr*>(expr.get())) {
             return std::make_unique<MemberAssignmentStmt>(std::move(mem->object), mem->member, std::move(value));
         }
         
-        // 2. Is it a normal variable assignment (e.g., counter = 0)?
+        // 3. Is it a normal variable assignment (e.g., counter = 0)?
         if (auto* var = dynamic_cast<VariableExpr*>(expr.get())) {
             return std::make_unique<AssignmentStmt>(var->name, std::move(value));
         }
@@ -164,14 +175,16 @@ std::unique_ptr<Stmt> Parser::parseAskStmt() {
 std::unique_ptr<Stmt> Parser::parseIfStmt() {
     auto cond = parseExpression();
     if (!cond) throw std::runtime_error("Missing condition after 'if'");
-    consume(TokenType::COLON, "Expected ':' after if condition");
+    // ':' is optional: "if cond: stmt", "if cond { block }", and
+    // "if cond: { block }" are all accepted.
+    match(TokenType::COLON);
     auto thenB = parseStatement();
     if (!thenB) throw std::runtime_error("Missing statement for if");
     std::unique_ptr<Stmt> elseB = nullptr;
     if (match(TokenType::KEYWORD_ELF)) {
         auto elfCond = parseExpression();
         if (!elfCond) throw std::runtime_error("Missing condition after 'elf'");
-        consume(TokenType::COLON, "Expected ':' after elf condition");
+        match(TokenType::COLON);
         auto elfThen = parseStatement();
         if (!elfThen) throw std::runtime_error("Missing statement for elf");
         elseB = std::make_unique<IfStmt>(std::move(elfCond), std::move(elfThen));
@@ -180,7 +193,7 @@ std::unique_ptr<Stmt> Parser::parseIfStmt() {
             if (match(TokenType::KEYWORD_ELF)) {
                 auto nextCond = parseExpression();
                 if (!nextCond) throw std::runtime_error("Missing condition after 'elf'");
-                consume(TokenType::COLON, "Expected ':'");
+                match(TokenType::COLON);
                 auto nextThen = parseStatement();
                 if (!nextThen) throw std::runtime_error("Missing statement for elf");
                 auto nextIf = std::make_unique<IfStmt>(std::move(nextCond), std::move(nextThen));
@@ -190,7 +203,7 @@ std::unique_ptr<Stmt> Parser::parseIfStmt() {
         }
     }
     if (match(TokenType::KEYWORD_ELS)) {
-        consume(TokenType::COLON, "Expected ':' after els");
+        match(TokenType::COLON);
         auto elsB = parseStatement();
         if (!elsB) throw std::runtime_error("Missing statement for els");
         if (elseB) {
@@ -214,6 +227,7 @@ std::unique_ptr<Stmt> Parser::parseWhileStmt() {
 
 std::unique_ptr<Stmt> Parser::parseForStmt() {
     Token iter = consume(TokenType::IDENTIFIER, "Expected iterator variable after 'for'");
+    match(TokenType::KEYWORD_IN); // 'in' is optional: "for x y {}" and "for x in y {}" both work
     auto iterable = parseExpression();
     if (!iterable) throw std::runtime_error("Missing iterable in for");
     auto body = parseBlock();
@@ -379,6 +393,11 @@ std::unique_ptr<Expr> Parser::parsePostfix(std::unique_ptr<Expr> left) {
         } else if (match(TokenType::DOT)) {
             Token member = consume(TokenType::IDENTIFIER, "Expected member name after '.'");
             left = std::make_unique<MemberAccessExpr>(std::move(left), member.lexeme);
+        } else if (match(TokenType::LEFT_BRACKET)) {
+            auto index = parseExpression();
+            if (!index) throw std::runtime_error("Missing index expression inside '[]'");
+            consume(TokenType::RIGHT_BRACKET, "Expected ']' after index expression");
+            left = std::make_unique<IndexExpr>(std::move(left), std::move(index));
         } else {
             break;
         }

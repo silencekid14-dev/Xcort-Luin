@@ -209,7 +209,7 @@ void Lexer::identifierOrKeyword() {
     else if (lexeme == "ask")   addToken(TokenType::KEYWORD_ASK, lexeme);
     else if (lexeme == "if")    addToken(TokenType::KEYWORD_IF, lexeme);
     else if (lexeme == "elf")   addToken(TokenType::KEYWORD_ELF, lexeme);
-    else if (lexeme == "els")   addToken(TokenType::KEYWORD_ELS, lexeme);
+    else if (lexeme == "els" || lexeme == "else") addToken(TokenType::KEYWORD_ELS, lexeme);
     else if (lexeme == "while") addToken(TokenType::KEYWORD_WHILE, lexeme);
     else if (lexeme == "for")   addToken(TokenType::KEYWORD_FOR, lexeme);
     else if (lexeme == "loop")  addToken(TokenType::KEYWORD_LOOP, lexeme);
@@ -220,6 +220,7 @@ void Lexer::identifierOrKeyword() {
     else if (lexeme == "self")  addToken(TokenType::KEYWORD_SELF, lexeme);
     else if (lexeme == "try")   addToken(TokenType::KEYWORD_TRY, lexeme);
     else if (lexeme == "import") addToken(TokenType::KEYWORD_IMPORT, lexeme);
+    else if (lexeme == "in")    addToken(TokenType::KEYWORD_IN, lexeme);
     else if (lexeme == "true")  addToken(TokenType::KW_TRUE, lexeme);
     else if (lexeme == "false") addToken(TokenType::KW_FALSE, lexeme);
     else                        addToken(TokenType::IDENTIFIER, lexeme);

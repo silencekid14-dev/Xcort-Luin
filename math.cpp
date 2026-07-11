@@ -9,6 +9,12 @@ namespace {
 
 // Pulls a numeric (int or double) argument out as a double, or throws a
 // clear runtime error naming the offending math function.
+double asNumeric(const Value& v, const std::string& fnName) {
+    if (std::holds_alternative<int>(v))    return static_cast<double>(std::get<int>(v));
+    if (std::holds_alternative<double>(v)) return std::get<double>(v);
+    throw std::runtime_error("math." + fnName + "(): value must be a number");
+}
+
 double numArg(const std::vector<Value>& args, size_t i, const std::string& fnName) {
     const Value& v = args[i];
     if (std::holds_alternative<int>(v))    return static_cast<double>(std::get<int>(v));
@@ -66,6 +72,18 @@ std::shared_ptr<Module> createMathModule() {
     });
 
     mod->members["min"] = makeNative("min", [](std::vector<Value>& args) -> Value {
+        // math.min([...]) — a single array argument reduces over its elements.
+        if (args.size() == 1 && std::holds_alternative<std::shared_ptr<ValueArray>>(args[0])) {
+            auto arr = std::get<std::shared_ptr<ValueArray>>(args[0]);
+            if (arr->elements.empty())
+                throw std::runtime_error("math.min(): array must not be empty");
+            Value best = arr->elements[0];
+            for (size_t i = 1; i < arr->elements.size(); ++i) {
+                if (asNumeric(arr->elements[i], "min") < asNumeric(best, "min"))
+                    best = arr->elements[i];
+            }
+            return best;
+        }
         requireArgCount(args, 2, "min");
         bool bothInt = std::holds_alternative<int>(args[0]) && std::holds_alternative<int>(args[1]);
         if (bothInt) return std::min(std::get<int>(args[0]), std::get<int>(args[1]));
@@ -73,6 +91,18 @@ std::shared_ptr<Module> createMathModule() {
     });
 
     mod->members["max"] = makeNative("max", [](std::vector<Value>& args) -> Value {
+        // math.max([...]) — a single array argument reduces over its elements.
+        if (args.size() == 1 && std::holds_alternative<std::shared_ptr<ValueArray>>(args[0])) {
+            auto arr = std::get<std::shared_ptr<ValueArray>>(args[0]);
+            if (arr->elements.empty())
+                throw std::runtime_error("math.max(): array must not be empty");
+            Value best = arr->elements[0];
+            for (size_t i = 1; i < arr->elements.size(); ++i) {
+                if (asNumeric(arr->elements[i], "max") > asNumeric(best, "max"))
+                    best = arr->elements[i];
+            }
+            return best;
+        }
         requireArgCount(args, 2, "max");
         bool bothInt = std::holds_alternative<int>(args[0]) && std::holds_alternative<int>(args[1]);
         if (bothInt) return std::max(std::get<int>(args[0]), std::get<int>(args[1]));

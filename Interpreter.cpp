@@ -54,6 +54,11 @@ void Interpreter::execute(const Stmt& stmt) {
         // 2. Evaluate the value and save it to the object's instance fields
         Value computedValue = evaluate(*memAssign->value);
         instance->fields[memAssign->member] = computedValue;
+    } else if (auto* idxAssign = dynamic_cast<const IndexAssignmentStmt*>(&stmt)) {
+        executeIndexAssignmentStmt(*idxAssign);
+    } else if (auto* block = dynamic_cast<const BlockStmt*>(&stmt)) {
+        // A bare '{ ... }' used as a single statement (e.g. brace-form 'if').
+        executeBlock(*block);
     } else { // <-- Notice how everything pairs up properly here
         throw std::runtime_error("Unknown statement type in interpreter.");
     }
@@ -211,6 +216,22 @@ void Interpreter::executeTryStmt(const TryStmt& stmt) {
     }
 }
 
+void Interpreter::executeIndexAssignmentStmt(const IndexAssignmentStmt& stmt) {
+    Value obj = evaluate(*stmt.object);
+    if (!std::holds_alternative<std::shared_ptr<ValueArray>>(obj))
+        throw std::runtime_error("Only arrays support index assignment (e.g. arr[i] = value)");
+    auto arr = std::get<std::shared_ptr<ValueArray>>(obj);
+
+    Value idxVal = evaluate(*stmt.index);
+    if (!std::holds_alternative<int>(idxVal))
+        throw std::runtime_error("Array index must be an integer");
+    int idx = std::get<int>(idxVal);
+    if (idx < 0 || idx >= static_cast<int>(arr->elements.size()))
+        throw std::runtime_error("Array index out of range: " + std::to_string(idx));
+
+    arr->elements[idx] = evaluate(*stmt.value);
+}
+
 void Interpreter::executeImportStmt(const ImportStmt& stmt) {
     // Only "math" exists right now; add more native modules here as needed.
     if (stmt.moduleName == "math") {
@@ -265,6 +286,8 @@ Value Interpreter::evaluate(const Expr& expr) {
         return evaluateCallExpr(*call);
     if (auto* arr = dynamic_cast<const ArrayLiteral*>(&expr))
         return evaluateArrayLiteral(*arr);
+    if (auto* idx = dynamic_cast<const IndexExpr*>(&expr))
+        return evaluateIndexExpr(*idx);
     if (auto* bin = dynamic_cast<const BinaryOpExpr*>(&expr))
         return evaluateBinaryOp(*bin);
     if (auto* un = dynamic_cast<const UnaryMinusExpr*>(&expr))
@@ -343,6 +366,28 @@ Value Interpreter::evaluateMemberAccessExpr(const MemberAccessExpr& expr) {
     }
     throw std::runtime_error("Only class instances and modules have fields and methods");
 }
+Value Interpreter::evaluateIndexExpr(const IndexExpr& expr) {
+    Value obj = evaluate(*expr.object);
+    Value idxVal = evaluate(*expr.index);
+    if (!std::holds_alternative<int>(idxVal))
+        throw std::runtime_error("Array/string index must be an integer");
+    int idx = std::get<int>(idxVal);
+
+    if (std::holds_alternative<std::shared_ptr<ValueArray>>(obj)) {
+        auto arr = std::get<std::shared_ptr<ValueArray>>(obj);
+        if (idx < 0 || idx >= static_cast<int>(arr->elements.size()))
+            throw std::runtime_error("Array index out of range: " + std::to_string(idx));
+        return arr->elements[idx];
+    }
+    if (std::holds_alternative<std::string>(obj)) {
+        const std::string& s = std::get<std::string>(obj);
+        if (idx < 0 || idx >= static_cast<int>(s.size()))
+            throw std::runtime_error("String index out of range: " + std::to_string(idx));
+        return std::string(1, s[idx]);
+    }
+    throw std::runtime_error("Only arrays and strings can be indexed with []");
+}
+
 Value Interpreter::evaluateGetBuiltin(const CallExpr& expr) {
     const auto& args = expr.arguments;
 
@@ -358,18 +403,38 @@ Value Interpreter::evaluateGetBuiltin(const CallExpr& expr) {
     }
 
     if (args.size() == 2) {
-        // Two shapes share this arity, disambiguated by which argument is a
-        // literal string/f-string and which is a bare variable name:
-        //   get("file.ext", varName)  -> READ:  arg0 is a literal filename,
-        //                                        arg1 is the destination variable
-        //   get(value, "file.ext")    -> WRITE: arg0 is the value (default)
+        // Two shapes share this arity:
+        //   get("file.ext", varName)  -> READ:  arg0 is a filename (literal or
+        //                                        variable), arg1 is the
+        //                                        destination variable
+        //   get(value, "file.ext")    -> WRITE: arg0 is the value, arg1 is
+        //                                        the filename (literal or
+        //                                        variable)
+        // A literal string/f-string in arg0 is an unambiguous READ signal.
+        // Otherwise, when arg1 is a bare identifier, we disambiguate by
+        // whether it currently holds a string: a WRITE target must already
+        // be a filename string, so if arg1 is undefined or non-string, this
+        // must be a READ into a fresh/overwritten destination variable.
         bool arg0IsStringLiteral = dynamic_cast<const StringLiteral*>(args[0].get()) ||
                                     dynamic_cast<const FStringLiteral*>(args[0].get());
         auto* arg1Var = dynamic_cast<const VariableExpr*>(args[1].get());
 
-        if (arg0IsStringLiteral && arg1Var) {
-            // READ: get("file.ext", varName) — load the file's contents into varName.
+        bool treatAsRead = false;
+        if (arg1Var) {
+            if (arg0IsStringLiteral) {
+                treatAsRead = true;
+            } else {
+                Value* existing = findVariable(arg1Var->name);
+                if (!existing || !std::holds_alternative<std::string>(*existing))
+                    treatAsRead = true;
+            }
+        }
+
+        if (treatAsRead) {
+            // READ: get(filename, varName) — load the file's contents into varName.
             Value fileVal = evaluate(*args[0]);
+            if (!std::holds_alternative<std::string>(fileVal))
+                throw std::runtime_error("get(filename, var): filename must be a string");
             const std::string& filename = std::get<std::string>(fileVal);
 
             std::ifstream in(filename, std::ios::in | std::ios::binary);
@@ -486,14 +551,27 @@ Value Interpreter::evaluateCrtBuiltin(const CallExpr& expr) {
     return std::string("");
 }
 
+Value Interpreter::evaluateLenBuiltin(const CallExpr& expr) {
+    const auto& args = expr.arguments;
+    if (args.size() != 1)
+        throw std::runtime_error("len() expects exactly 1 argument");
+    Value v = evaluate(*args[0]);
+    if (std::holds_alternative<std::shared_ptr<ValueArray>>(v))
+        return static_cast<int>(std::get<std::shared_ptr<ValueArray>>(v)->elements.size());
+    if (std::holds_alternative<std::string>(v))
+        return static_cast<int>(std::get<std::string>(v).size());
+    throw std::runtime_error("len(): argument must be an array or a string");
+}
+
 Value Interpreter::evaluateCallExpr(const CallExpr& expr) {
-    // 'get' / 'del' / 'crt' are reserved builtins, handled before normal
-    // variable/function resolution so the user never has to (and can't)
-    // redefine them.
+    // 'get' / 'del' / 'crt' / 'len' are reserved builtins, handled before
+    // normal variable/function resolution so the user never has to (and
+    // can't) redefine them.
     if (auto* calleeVar = dynamic_cast<const VariableExpr*>(expr.callee.get())) {
         if (calleeVar->name == "get") return evaluateGetBuiltin(expr);
         if (calleeVar->name == "del") return evaluateDelBuiltin(expr);
         if (calleeVar->name == "crt") return evaluateCrtBuiltin(expr);
+        if (calleeVar->name == "len") return evaluateLenBuiltin(expr);
     }
 
     Value callee = evaluate(*expr.callee);
@@ -608,6 +686,30 @@ Value Interpreter::evaluateBinaryOp(const BinaryOpExpr& expr) {
             }
         }
         default: break;
+    }
+
+    // Array concatenation: arr1 + arr2 builds a new array with arr2's
+    // elements appended after arr1's (e.g. self.employees + [employee]).
+    if (expr.op == BinaryOp::PLUS &&
+        std::holds_alternative<std::shared_ptr<ValueArray>>(leftVal) &&
+        std::holds_alternative<std::shared_ptr<ValueArray>>(rightVal)) {
+        auto result = std::make_shared<ValueArray>();
+        const auto& leftElems = std::get<std::shared_ptr<ValueArray>>(leftVal)->elements;
+        const auto& rightElems = std::get<std::shared_ptr<ValueArray>>(rightVal)->elements;
+        result->elements.reserve(leftElems.size() + rightElems.size());
+        result->elements.insert(result->elements.end(), leftElems.begin(), leftElems.end());
+        result->elements.insert(result->elements.end(), rightElems.begin(), rightElems.end());
+        return result;
+    }
+
+    // String concatenation: "a" + "b" -> "ab". Also allow a string on either
+    // side combined with a number, so f-string-free concatenation like
+    // "Total: " + total also works.
+    if (expr.op == BinaryOp::PLUS &&
+        (std::holds_alternative<std::string>(leftVal) || std::holds_alternative<std::string>(rightVal)) &&
+        !std::holds_alternative<std::shared_ptr<ValueArray>>(leftVal) &&
+        !std::holds_alternative<std::shared_ptr<ValueArray>>(rightVal)) {
+        return valueToString(leftVal) + valueToString(rightVal);
     }
 
     // Arithmetic

@@ -83,6 +83,15 @@ public:
         : elements(std::move(elements)) {}
 };
 
+// Array/string indexing: object[index], e.g. self.employees[i], name[0]
+class IndexExpr : public Expr {
+public:
+    std::unique_ptr<Expr> object;
+    std::unique_ptr<Expr> index;
+    IndexExpr(std::unique_ptr<Expr> object, std::unique_ptr<Expr> index)
+        : object(std::move(object)), index(std::move(index)) {}
+};
+
 enum class BinaryOp {
     PLUS, MINUS, STAR, SLASH, PERCENT,
     EQUAL_EQUAL, BANG_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL
@@ -122,6 +131,16 @@ public:
     std::unique_ptr<Expr> value;
     MemberAssignmentStmt(std::unique_ptr<Expr> obj, std::string mem, std::unique_ptr<Expr> val)
         : object(std::move(obj)), member(std::move(mem)), value(std::move(val)) {}
+};
+
+// Index assignment: object[index] = value, e.g. self.employees[i] = emp
+class IndexAssignmentStmt : public Stmt {
+public:
+    std::unique_ptr<Expr> object;
+    std::unique_ptr<Expr> index;
+    std::unique_ptr<Expr> value;
+    IndexAssignmentStmt(std::unique_ptr<Expr> obj, std::unique_ptr<Expr> idx, std::unique_ptr<Expr> val)
+        : object(std::move(obj)), index(std::move(idx)), value(std::move(val)) {}
 };
 
 class ShowStmt : public Stmt {
