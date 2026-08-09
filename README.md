@@ -2,7 +2,7 @@
 
 **Version:** 2.1.2
 **Date:** 12th July 2026.  
-**Author:** Xcort Team  
+**Author:** Xcort Team by Ars Platforms Inc. 
 
 **New Update Feature On v2.1.2:** Bug Fixing and Enhancing array indexing capabilities.
 
@@ -768,4 +768,5 @@ More features (Advance import system,more modules, hardware support, etc.) are c
 
 **Made with passion All over the world**  
 **Xcort Team** — Building the future, one line at a time.
+              **Ars Platforms Inc**
 
