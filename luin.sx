@@ -1,0 +1,3 @@
+name = ""
+if name == "amani"
+show("ok")

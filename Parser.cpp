@@ -292,9 +292,25 @@ std::unique_ptr<Stmt> Parser::parseTryStmt() {
 }
 
 std::unique_ptr<Stmt> Parser::parseImportStmt() {
-    // import math — bare keyword + module name, no parens/quotes.
+    // import math               — bare keyword + native module name.
+    // import "program.sx"       — quoted filename form.
+    // import program.sx         — bare filename form: the lexer tokenizes
+    //                              this as IDENTIFIER DOT IDENTIFIER, so we
+    //                              stitch it back into "program.sx" here.
+    if (check(TokenType::STRING_LITERAL)) {
+        Token name = advance();
+        return std::make_unique<ImportStmt>(name.lexeme);
+    }
+
     Token name = consume(TokenType::IDENTIFIER, "Expected module name after 'import'");
-    return std::make_unique<ImportStmt>(name.lexeme);
+    std::string moduleName = name.lexeme;
+
+    if (match(TokenType::DOT)) {
+        Token ext = consume(TokenType::IDENTIFIER, "Expected file extension after '.' in import");
+        moduleName += "." + ext.lexeme;
+    }
+
+    return std::make_unique<ImportStmt>(moduleName);
 }
 
 // ---------- Expression parsing ----------

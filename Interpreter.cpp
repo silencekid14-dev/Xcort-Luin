@@ -1,5 +1,12 @@
 #include "Interpreter.h"
 #include "math.h"
+#include "time.h"
+#include "string_module.h"
+#include "random_module.h"
+#include "arrays_module.h"
+#include "os_module.h"
+#include "Lexer.h"
+#include "Parser.h"
 #include <stdexcept>
 #include <sstream>
 #include <cctype>
@@ -233,11 +240,63 @@ void Interpreter::executeIndexAssignmentStmt(const IndexAssignmentStmt& stmt) {
 }
 
 void Interpreter::executeImportStmt(const ImportStmt& stmt) {
-    // Only "math" exists right now; add more native modules here as needed.
+    // Native modules, v2.2.
     if (stmt.moduleName == "math") {
-        m_envStack.back()[stmt.moduleName] = createMathModule();
+        m_envStack.back()["math"] = createMathModule();
+    } else if (stmt.moduleName == "time") {
+        m_envStack.back()["time"] = createTimeModule();
+    } else if (stmt.moduleName == "string") {
+        m_envStack.back()["string"] = createStringModule();
+    } else if (stmt.moduleName == "random") {
+        m_envStack.back()["random"] = createRandomModule();
+    } else if (stmt.moduleName == "arrays") {
+        m_envStack.back()["arrays"] = createArraysModule();
+    } else if (stmt.moduleName == "os") {
+        m_envStack.back()["os"] = createOsModule();
+    } else if (stmt.moduleName.size() > 3 &&
+               stmt.moduleName.substr(stmt.moduleName.size() - 3) == ".sx") {
+        // v2.2: import "some_program.sx" / import some_program.sx --
+        // loads another Luin script's fn/cls definitions into scope.
+        executeSxFileImport(stmt.moduleName);
     } else {
         throw std::runtime_error("Unknown module '" + stmt.moduleName + "'");
+    }
+}
+
+void Interpreter::executeSxFileImport(const std::string& path) {
+    namespace fs = std::filesystem;
+
+    std::error_code ec;
+    fs::path resolved = fs::absolute(path, ec);
+    std::string key = ec ? path : resolved.string();
+
+    // Already imported (directly or via a cycle) -- no-op.
+    if (m_importedSxFiles.count(key)) return;
+    m_importedSxFiles.insert(key);
+
+    std::ifstream file(path);
+    if (!file.is_open())
+        throw std::runtime_error("import: could not open '" + path + "'");
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+
+    Lexer lexer(buffer.str());
+    auto tokens = lexer.scanTokens();
+    Parser parser(std::move(tokens));
+    auto program = parser.parse();
+    if (!program)
+        throw std::runtime_error("import: parsing failed for '" + path + "'");
+
+    // Only top-level fn/cls definitions are imported into the current
+    // scope; other top-level statements in the imported file (e.g. show(),
+    // assignments) are executed too, same as running the file directly --
+    // this matches how `fn`/`cls` already register themselves globally
+    // when a program runs, so importing "runs" the file once and leaves
+    // its functions/classes available to the importer afterward.
+    Program* rawProgram = program.get();
+    m_importedPrograms.push_back(std::move(program));
+    for (const auto& s : rawProgram->statements) {
+        execute(*s);
     }
 }
 

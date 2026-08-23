@@ -1,0 +1,15 @@
+import string
+import random
+import time
+varname = "amani"
+name ="y"
+father = "angilus"
+n = 1
+show(string.contains(varname, "a")) # works, checks if varname has 'a'
+show(string.contains(varname, name)) # works, checks if varname has name, where name = y. so checks 'y'
+show(string.replace(father, "i", "e")) # replaces 'i' with 'e'
+show( string.replace(s, from, to)) # says 'Runtime error: Undefined variable 's' '
+show(time.stamp())
+show(random.seed(n)) # doesnt work, it prints nothin
+show(random.int(1, 6)) # it only prints 3 , every run
+show(random.choice(["rock", "paper", "scissors"])) # it prints 'scissors' every run

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <exception>
 #include <functional>
+#include <set>
 
 namespace luin {
 
@@ -108,6 +109,13 @@ private:
     void executeImportStmt(const ImportStmt& stmt);
     void executeIndexAssignmentStmt(const IndexAssignmentStmt& stmt);
 
+    // v2.2: `import "some_program.sx"` (or `import some_program.sx`) loads
+    // and runs another .sx file's top-level fn/cls definitions into the
+    // current global scope, so its functions/classes become callable from
+    // the importing script. Guards against importing the same resolved
+    // file twice (e.g. diamond imports).
+    void executeSxFileImport(const std::string& path);
+
     Value evaluate(const Expr& expr);
     Value evaluateStringLiteral(const StringLiteral& expr);
     Value evaluateFStringLiteral(const FStringLiteral& expr);
@@ -174,6 +182,16 @@ private:
     // caught yet" from "an error with an empty message".
     std::string m_lastError;
     bool m_hasError = false;
+
+    // v2.2: resolved absolute paths of .sx files already imported via
+    // `import "file.sx"`, so re-importing (directly or via a cycle) is a
+    // harmless no-op instead of re-running the file's top-level code.
+    std::set<std::string> m_importedSxFiles;
+
+    // v2.2: keeps the AST of every imported .sx file alive for the whole
+    // interpreter run, since Function/Class values hold raw FnStmt*
+    // pointers into it.
+    std::vector<std::unique_ptr<Program>> m_importedPrograms;
 };
 
 } // namespace luin

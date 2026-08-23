@@ -137,6 +137,76 @@ std::shared_ptr<Module> createMathModule() {
         return std::exp(numArg(args, 0, "exp"));
     });
 
+    // ---------- v2.2 additions ----------
+    mod->members["round"] = makeNative("round", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 1, "round");
+        double x = numArg(args, 0, "round");
+        return static_cast<int>(x >= 0 ? std::floor(x + 0.5) : std::ceil(x - 0.5));
+    });
+
+    mod->members["trunc"] = makeNative("trunc", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 1, "trunc");
+        return static_cast<int>(std::trunc(numArg(args, 0, "trunc")));
+    });
+
+    mod->members["hypot"] = makeNative("hypot", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 2, "hypot");
+        return std::hypot(numArg(args, 0, "hypot"), numArg(args, 1, "hypot"));
+    });
+
+    mod->members["log2"] = makeNative("log2", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 1, "log2");
+        double x = numArg(args, 0, "log2");
+        if (x <= 0) throw std::runtime_error("math.log2(): argument must be > 0");
+        return std::log2(x);
+    });
+
+    mod->members["log10"] = makeNative("log10", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 1, "log10");
+        double x = numArg(args, 0, "log10");
+        if (x <= 0) throw std::runtime_error("math.log10(): argument must be > 0");
+        return std::log10(x);
+    });
+
+    mod->members["gcd"] = makeNative("gcd", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 2, "gcd");
+        long a = static_cast<long>(numArg(args, 0, "gcd"));
+        long b = static_cast<long>(numArg(args, 1, "gcd"));
+        a = std::abs(a); b = std::abs(b);
+        while (b != 0) { long t = b; b = a % b; a = t; }
+        return static_cast<int>(a);
+    });
+
+    mod->members["lcm"] = makeNative("lcm", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 2, "lcm");
+        long a = static_cast<long>(numArg(args, 0, "lcm"));
+        long b = static_cast<long>(numArg(args, 1, "lcm"));
+        a = std::abs(a); b = std::abs(b);
+        if (a == 0 || b == 0) return 0;
+        long g = a, h = b;
+        while (h != 0) { long t = h; h = g % h; g = t; }
+        return static_cast<int>((a / g) * b);
+    });
+
+    mod->members["clamp"] = makeNative("clamp", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 3, "clamp");
+        double x = numArg(args, 0, "clamp");
+        double lo = numArg(args, 1, "clamp");
+        double hi = numArg(args, 2, "clamp");
+        double result = std::min(std::max(x, lo), hi);
+        bool allInt = std::holds_alternative<int>(args[0]) &&
+                      std::holds_alternative<int>(args[1]) &&
+                      std::holds_alternative<int>(args[2]);
+        if (allInt) return static_cast<int>(result);
+        return result;
+    });
+
+    mod->members["sign"] = makeNative("sign", [](std::vector<Value>& args) -> Value {
+        requireArgCount(args, 1, "sign");
+        double x = numArg(args, 0, "sign");
+        return (x > 0) - (x < 0);
+    });
+
     // ---------- constants ----------
     mod->members["pi"] = 3.141592653589793;
     mod->members["e"]  = 2.718281828459045;
