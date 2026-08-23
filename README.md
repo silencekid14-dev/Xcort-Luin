@@ -1,10 +1,13 @@
 **Luin (Silex) Programming Language**
 
-**Version:** 2.1.2
-**Date:** 12th July 2026.  
+**Version:** 2.3
+**Date:** 23rd Aug 2026.  
 **Author:** Xcort Team by Ars Platforms Inc. 
 
-**New Update Feature On v2.1.2:** Bug Fixing and Enhancing array indexing capabilities.
+**New Update Feature On v2.3:** Bug Fixing and Enhancing new modules,packages and .sxc files
+
+**NOTE**: We has Ars Platforms, Inc know that we said on our youtube channel (http://youtube.com/@Ars-Platforms-Inc) about Luin IDE, it's still under building,
+It's taking longer than has expected, we are trully, sorry for people using Luin.🙏
 
 Luin (also known as Silex) is a modern, simple, and powerful programming language designed for both beginners and experienced developers. It combines clean syntax with powerful features, making it suitable for real-world software development.
 
@@ -725,6 +728,52 @@ show("   Thank you for using Luin v2.1")
 show("========================================")
 ```
 
+### 8. THE CHANGES OF V2.3
+# Luin v2.2 → v2.3
+
+## Major additions
+
+### 1. Compiled form (.sxc)
+- `Luin_v2.3 program.sx -b`   produces `program.sxc`
+- `Luin_v2.3 program.sxc -r`  (or just `Luin_v2.3 program.sxc`) runs it
+- Format: binary token stream only. Original source text is never stored.
+  Magic "LUINSXC1", version, count, then (type, line, lexeme) records.
+- This is the "instructions that Luin understands" requested by the user.
+
+### 2. Native `app` module (`import app`)
+UI primitives that make interactive console programs short and readable:
+- app.banner(text)
+- app.menu(title, options_array) → chosen index or -1
+- app.table(headers, rows)
+- app.confirm(prompt) → bool
+- app.clear()
+- app.pause([msg])
+- app.create / add_screen / set_start / title (foundation for richer apps)
+
+The control-flow loop stays in pure Luin so behaviour is transparent.
+
+### 3. Package foundation
+- Import of `.sx` files already existed; search paths and `.sxp` archives
+  are the next incremental step (see roadmap).
+
+### 4. Roadmap of the remaining ~45 features
+See the detailed list in the original analysis. Priorities after this release:
+- Dictionary type
+- map / filter / reduce
+- Default & rest parameters
+- Package directory search + install
+- JSON module
+- Stronger error objects
+
+## Files added
+- sxc.h / sxc.cpp
+- app_module.h / app_module.cpp
+- app_demo.sx
+
+## Compatibility
+Existing v2.2 scripts continue to run unchanged.
+
+
 ## How to Compile and Run
 
 ### Requirements
@@ -755,7 +804,7 @@ g++ -std=c++17 *.cpp resource.res -o Luin_version_name.exe
 
 ## Current Status
 
-Luin is under active development. Version 2.1.2 supports:
+Luin is under active development. Version 2.3 supports:
 - Variables and basic types
 - Control flow (if/elf/els, while, for, loop)
 - Functions and classes
