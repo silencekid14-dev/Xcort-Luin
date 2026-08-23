@@ -29,6 +29,7 @@ jobs:
 
       - name: Build Linux binary
         run: |
+          # Added static compilation flags here to make the binary standalone
           g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ *.cpp -o luin
           mkdir -p luin_package/usr/bin
           mkdir -p luin_package/DEBIAN
@@ -57,7 +58,8 @@ jobs:
 
       - name: Build macOS binary
         run: |
-          g++ -std=c++17 -O2 -o luin *.cpp
+          # Omitted global "-static" (illegal on macOS) but kept static-libgcc and static-libstdc++
+          g++ -std=c++17 -O2 -static-libgcc -static-libstdc++ -o luin *.cpp
           mkdir -p Luin.app/Contents/MacOS
           cp luin Luin.app/Contents/MacOS/Luin
           zip -r Luin-macOS.zip Luin.app
