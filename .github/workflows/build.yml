@@ -41,7 +41,7 @@ jobs:
             'Architecture: amd64' \
             'Maintainer: silencekid14-dev' \
             'Description: Luin programming language interpreter' \
-            > luin_package/DEBIAN/control
+            > luin_package/DEBIAN/control 
           dpkg-deb --build luin_package luin.deb
 
       - name: Upload Linux artifact
