@@ -29,19 +29,21 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          # Convert Windows resource.res into a Linux-compatible ELF object file
-          objcopy -I binary -O elf64-x86-64 -B i386 resource.res resource.o
+          # Convert resource.res and securely assign non-executable stack parameters
+          objcopy -I binary -O elf64-x86-64 -B i386 --set-section-flags .data=alloc,load,readonly,data resource.res resource.o
           
-          # Compile the final statically linked binary with the converted object
-          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ *.cpp resource.o -o luin
+          # Compile the standalone static binary with an explicitly non-executable stack note
+          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ *.cpp resource.o -Wl,-z,noexecstack -o luin
           
-          # Package the artifact into a distinct standalone archive
+          # Strip the 'v' prefix out of the tag string safely for dpkg compatibility (e.g. v2.3 -> 2.3)
+          CLEAN_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          
           mkdir -p luin_package/usr/bin
           mkdir -p luin_package/DEBIAN
           cp luin luin_package/usr/bin/Luin_${{ github.ref_name }}_Linux
           printf '%s\n' \
             'Package: luin' \
-            'Version: ${{ github.ref_name }}' \
+            "Version: $CLEAN_VERSION" \
             'Section: devel' \
             'Priority: optional' \
             'Architecture: amd64' \
@@ -63,10 +65,10 @@ jobs:
 
       - name: Build macOS binary
         run: |
-          # Convert Windows resource.res into a macOS Mach-O object file
-          ld -r -output resource.o -sectcreate __TEXT __info_plist resource.res
+          # Convert resource.res using native Apple link strings (-o instead of -output)
+          ld -r -o resource.o -sectcreate __TEXT __info_plist resource.res
           
-          # Compile the Mach-O binary bundle 
+          # Compile Mach-O launcher bundle
           g++ -std=c++17 -O2 -stdlib=libc++ *.cpp resource.o -o luin
           mkdir -p Luin.app/Contents/MacOS
           cp luin Luin.app/Contents/MacOS/Luin_${{ github.ref_name }}_macOS
