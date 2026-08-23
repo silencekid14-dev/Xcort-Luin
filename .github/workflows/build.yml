@@ -14,13 +14,13 @@ jobs:
 
       - name: Build Windows executable
         run: |
-          g++ -std=c++17 -02 -static -static-libgcc -static-libstdc++ *.cpp resource.res -o Luin.exe
+          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ *.cpp resource.res -o Luin_${{ github.ref_name }}_Windows.exe
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Luin-Windows
-          path: Luin.exe
+          name: Luin_${{ github.ref_name }}_Windows
+          path: Luin_${{ github.ref_name }}_Windows.exe
 
   linux:
     runs-on: ubuntu-latest
@@ -29,27 +29,32 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          # Added static compilation flags here to make the binary standalone
-          g++ -std=c++17 -02 -static -static-libgcc -static-libstdc++ *.cpp resource.res -o luin
+          # Convert Windows resource.res into a Linux-compatible ELF object file
+          objcopy -I binary -O elf64-x86-64 -B i386 resource.res resource.o
+          
+          # Compile the final statically linked binary with the converted object
+          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ *.cpp resource.o -o luin
+          
+          # Package the artifact into a distinct standalone archive
           mkdir -p luin_package/usr/bin
           mkdir -p luin_package/DEBIAN
-          cp luin luin_package/usr/bin/
+          cp luin luin_package/usr/bin/Luin_${{ github.ref_name }}_Linux
           printf '%s\n' \
             'Package: luin' \
-            'Version: 2.3' \
+            'Version: ${{ github.ref_name }}' \
             'Section: devel' \
             'Priority: optional' \
             'Architecture: amd64' \
             'Maintainer: silencekid14-dev' \
             'Description: Luin programming language interpreter' \
             > luin_package/DEBIAN/control 
-          dpkg-deb --build luin_package luin.deb
+          dpkg-deb --build luin_package Luin_${{ github.ref_name }}_Linux.deb
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Luin-Linux-deb
-          path: luin.deb
+          name: Luin_${{ github.ref_name }}_Linux
+          path: Luin_${{ github.ref_name }}_Linux.deb
 
   macos:
     runs-on: macos-latest
@@ -58,14 +63,17 @@ jobs:
 
       - name: Build macOS binary
         run: |
-          g++ -std=c++17 -O2 -stdlib=libc++ -o luin *.cpp
+          # Convert Windows resource.res into a macOS Mach-O object file
+          ld -r -output resource.o -sectcreate __TEXT __info_plist resource.res
+          
+          # Compile the Mach-O binary bundle 
+          g++ -std=c++17 -O2 -stdlib=libc++ *.cpp resource.o -o luin
           mkdir -p Luin.app/Contents/MacOS
-          cp luin Luin.app/Contents/MacOS/Luin
-          zip -r Luin-macOS.zip Luin.app
-
+          cp luin Luin.app/Contents/MacOS/Luin_${{ github.ref_name }}_macOS
+          zip -r Luin_${{ github.ref_name }}_macOS.zip Luin.app
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Luin-macOS
-          path: Luin-macOS.zip
+          name: Luin_${{ github.ref_name }}_macOS
+          path: Luin_${{ github.ref_name }}_macOS.zip
