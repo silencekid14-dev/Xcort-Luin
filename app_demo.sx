@@ -1,0 +1,61 @@
+# Minimal demonstration of the "app" module.
+# Run:  ./Luin_v2.3 app_demo.sx
+# Build: ./Luin_v2.3 app_demo.sx -b
+# Run compiled: ./Luin_v2.3 app_demo.sxc -r
+
+import app
+
+app.banner("Employee Quick Desk")
+
+# Simple menu-driven loop written in pure Luin.
+# The native app module supplies only the UI primitives;
+# the control flow stays transparent and under the user's control.
+
+loop {
+    choice = app.menu("Main Menu", [
+        "List employees",
+        "Add note",
+        "Show table demo",
+        "About"
+    ])
+
+    if choice == -1 {
+        show("Goodbye.")
+        sloop()
+    }
+
+    if choice == 0 {
+        app.banner("Employees")
+        show("Alice  - Engineering")
+        show("Bob    - Marketing")
+        show("Carol  - Engineering")
+        app.pause()
+    }
+
+    if choice == 1 {
+        app.banner("Add Note")
+        # In a real program you would use ask() here.
+        show("(demo) Note recorded.")
+        app.pause("Press Enter...")
+    }
+
+    if choice == 2 {
+        app.banner("Table")
+        app.table(
+            ["Name", "Dept", "Salary"],
+            [
+                ["Alice", "Eng", 75000],
+                ["Bob",   "Mkt", 68000],
+                ["Carol", "Eng", 92000]
+            ]
+        )
+        app.pause()
+    }
+
+    if choice == 3 {
+        app.banner("About")
+        show("Built with Luin v2.3 + app module.")
+        show("Simple, honest, no hidden magic.")
+        app.pause()
+    }
+}

@@ -5,6 +5,7 @@
 #include "random_module.h"
 #include "arrays_module.h"
 #include "os_module.h"
+#include "app_module.h"
 #include "Lexer.h"
 #include "Parser.h"
 #include <stdexcept>
@@ -253,6 +254,8 @@ void Interpreter::executeImportStmt(const ImportStmt& stmt) {
         m_envStack.back()["arrays"] = createArraysModule();
     } else if (stmt.moduleName == "os") {
         m_envStack.back()["os"] = createOsModule();
+    } else if (stmt.moduleName == "app") {
+        m_envStack.back()["app"] = createAppModule();
     } else if (stmt.moduleName.size() > 3 &&
                stmt.moduleName.substr(stmt.moduleName.size() - 3) == ".sx") {
         // v2.2: import "some_program.sx" / import some_program.sx --
