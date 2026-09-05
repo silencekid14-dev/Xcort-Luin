@@ -8,6 +8,7 @@
 #include "Parser.h"
 #include "Interpreter.h"
 #include "sxc.h"
+#include "version.h"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -71,13 +72,17 @@ static int runSxcFile(const std::string& filename) {
 // ---------------------------------------------------------------------------
 
 int main(int argc, char* argv[]) {
+    // Version / update notice (network at most once per hour; silent on failure).
+    // Printed to stderr so it does not mix with normal program stdout.
+    luin::checkForUpdates();
+
     if (argc < 2) {
-        std::cerr << "Luin v2.3\n"
+        std::cerr << "Luin v" << luin::LUIN_VERSION << "\n"
                   << "Usage:\n"
-                  << "  Luin_v2.3 <file.sx> [more.sx ...]\n"
-                  << "  Luin_v2.3 <file.sx> -b          # compile to <file.sxc>\n"
-                  << "  Luin_v2.3 <file.sxc> -r         # run compiled form\n"
-                  << "  Luin_v2.3 <file.sxc>            # also runs .sxc directly\n";
+                  << "  Luin_v2.4 <file.sx> [more.sx ...]\n"
+                  << "  Luin_v2.4 <file.sx> -b          # compile to <file.sxc>\n"
+                  << "  Luin_v2.4 <file.sxc> -r         # run compiled form\n"
+                  << "  Luin_v2.4 <file.sxc>            # also runs .sxc directly\n";
         return 1;
     }
 

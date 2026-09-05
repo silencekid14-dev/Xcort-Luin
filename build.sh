@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Builds Luin_v2.3 (Linux/macOS).
-# Produces: ./Luin_v2.3
+# Builds Luin_v2.4 (Windows/Linux/macOS).
+# Produces: ./Luin_v2.4
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -22,9 +22,10 @@ SOURCES=(
   os_module.cpp
   app_module.cpp
   sxc.cpp
+  version.cpp
 )
 
-echo "Compiling Luin_v2.3 ..."
-$CXX $CXXFLAGS -o Luin_v2.3 "${SOURCES[@]}"
-echo "Built ./Luin_v2.3"
-ls -l Luin_v2.3
+echo "Compiling Luin_v2.4 ..."
+$CXX $CXXFLAGS -o Luin_v2.4 "${SOURCES[@]}"
+echo "Built ./Luin_v2.4"
+ls -l Luin_v2.4

@@ -1,3 +1,3 @@
 name = ""
-if name == "amani"
-show("ok")
+ask("write name: ">>name)
+show(f"hi {name}")

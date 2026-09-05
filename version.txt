@@ -1,0 +1,2 @@
+2.4
+Luin v2.4 — version checker, persistent update notices, 1-hour network cooldown.
