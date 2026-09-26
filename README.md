@@ -1,10 +1,10 @@
 **Luin (Silex) Programming Language**
 
-**Version:** 2.4
-**Date:** 6th Sep 2026.  
+**Version:** 2.4.1
+**Date:** 26th Sep 2026.  
 **Author:** Xcort Team by Ars Platforms Inc. 
 
-**New Update Feature On v2.4:** Bug Fixing and Enhancing new modules,packages and .sxc files and Automatic Version checking!.
+**New Update Feature On v2.4.1:** Nothing new, just did a re-compile build patch for 2.4.1, because '-static' wasn't there!. Enjoy!.
 
 **NOTE**: We has Ars Platforms, Inc know that we said on our youtube channel (http://youtube.com/@Ars-Platforms-Inc) about Luin IDE, it's still under building,
 It's taking longer than has expected, we are trully, sorry for people using Luin.🙏
@@ -854,7 +854,7 @@ g++ -std=c++17 *.cpp resource.res -o Luin_version_name.exe
 
 ## Current Status
 
-Luin is under active development. Version 2.4 supports:
+Luin is under active development. Version 2.4.1 supports:
 - Variables and basic types
 - Control flow (if/elf/els, while, for, loop)
 - Functions and classes
