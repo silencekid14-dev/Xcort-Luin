@@ -1,48 +1,69 @@
 name: Build Luin
-
 on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:          # allows manual run
+  workflow_dispatch: # allows manual run
 
 jobs:
   windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Install Raylib via MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-raylib
+
       - name: Build Windows Binary
+        shell: msys2 {0}
         working-directory: src
         run: |
-          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ *.cpp resource.res -o ../Luin_${{ github.ref_name }}_Windows.exe
-        
+          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ *.cpp resource.res -lraylib -lopengl32 -lgdi32 -lwinmm -o ../Luin_${{ github.ref_name }}_Windows.exe
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: Luin_${{ github.ref_name }}_Windows
-          path: Luin_${{ github.ref_name }}_Windows.exe
+          path: Luin_${{ github.ref_name }}_Windows.exe  # Fixed: Points to root where output was dropped
 
   linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Raylib Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libraylib-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev
+
       - name: Build Linux binary
         working-directory: src
         run: |
-          # Convert resource.res and securely assign non-executable stack parameters
-          objcopy -I binary -O elf64-x86-64 -B i386 --set-section-flags .data=alloc,load,readonly,data resource.res resource.o
+          # Convert resource.res safely if needed, otherwise skip this if Windows-only
+          if [ -f resource.res ]; then
+            objcopy -I binary -O elf64-x86-64 -B i386 --set-section-flags .data=alloc,load,readonly,data resource.res resource.o
+            RESOURCE_OBJ="resource.o"
+          else
+            RESOURCE_OBJ=""
+          fi
           
-          # Compile the standalone static binary with an explicitly non-executable stack note
-          g++ -std=c++17 -O2 -static -static-libgcc -static-libstdc++ *.cpp resource.o -Wl,-z,noexecstack -o luin
+          # Fixed: Removed -static flags because libX11 and libGL do not support standard static linking easily
+          g++ -std=c++17 -O2 *.cpp $RESOURCE_OBJ -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -Wl,-z,noexecstack -o luin
           
-          # Strip the 'v' prefix out of the tag string safely for dpkg compatibility (e.g. v2.3 -> 2.3)
+          # Strip the 'v' prefix out of the tag string safely for dpkg compatibility
           CLEAN_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
           
           mkdir -p ../luin_package/usr/bin
           mkdir -p ../luin_package/DEBIAN
+          
           cp luin ../luin_package/usr/bin/Luin_${{ github.ref_name }}_Linux
+          
           printf '%s\n' \
             'Package: luin' \
             "Version: $CLEAN_VERSION" \
@@ -51,7 +72,8 @@ jobs:
             'Architecture: amd64' \
             'Maintainer: silencekid14-dev' \
             'Description: Luin programming language interpreter' \
-            > ../luin_package/DEBIAN/control 
+            > ../luin_package/DEBIAN/control
+            
           dpkg-deb --build ../luin_package ../Luin_${{ github.ref_name }}_Linux.deb
 
       - name: Upload Linux artifact
@@ -65,18 +87,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Raylib
+        run: brew install raylib
+
       - name: Build macOS binary
         working-directory: src
         run: |
-          # Convert resource.res using native Apple link strings (-o instead of -output)
-          ld -r -o resource.o -sectcreate __TEXT __info_plist resource.res
+          # Fixed: Removed non-functional Windows resource compilation logic for macOS bundle.
+          # If you need an icon/plist on Mac, use a standard Info.plist file instead.
+          g++ -std=c++17 -O2 -stdlib=libc++ *.cpp -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -o luin
           
-          # Compile Mach-O launcher bundle
-          g++ -std=c++17 -O2 -stdlib=libc++ *.cpp resource.o -o luin
           mkdir -p ../Luin.app/Contents/MacOS
           cp luin ../Luin.app/Contents/MacOS/Luin_${{ github.ref_name }}_macOS
           
-          # Zip from the root folder
           cd ..
           zip -r Luin_${{ github.ref_name }}_macOS.zip Luin.app
 
