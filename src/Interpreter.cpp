@@ -6,6 +6,8 @@
 #include "arrays_module.h"
 #include "os_module.h"
 #include "app_module.h"
+#include "gui.h"
+#include "pkg_module.h"
 #include "Lexer.h"
 #include "Parser.h"
 #include <stdexcept>
@@ -30,6 +32,8 @@ void Interpreter::execute(const Stmt& stmt) {
         executeAskStmt(*ask);
     } else if (auto* ifStmt = dynamic_cast<const IfStmt*>(&stmt)) {
         executeIfStmt(*ifStmt);
+    } else if (auto* switchStmt = dynamic_cast<const SwitchStmt*>(&stmt)) {
+        executeSwitchStmt(*switchStmt);
     } else if (auto* whileStmt = dynamic_cast<const WhileStmt*>(&stmt)) {
         executeWhileStmt(*whileStmt);
     } else if (auto* forStmt = dynamic_cast<const ForStmt*>(&stmt)) {
@@ -165,6 +169,21 @@ void Interpreter::executeIfStmt(const IfStmt& stmt) {
         execute(*stmt.elseBranch);
 }
 
+void Interpreter::executeSwitchStmt(const SwitchStmt& stmt) {
+    Value subject = evaluate(*stmt.expression);
+    for (const auto& c : stmt.cases) {
+        for (const auto& vExpr : c.values) {
+            Value v = evaluate(*vExpr);
+            if (valuesEqual(subject, v)) {
+                execute(*c.body);
+                return;  // no fall-through
+            }
+        }
+    }
+    if (stmt.defaultBody)
+        execute(*stmt.defaultBody);
+}
+
 void Interpreter::executeWhileStmt(const WhileStmt& stmt) {
     while (isTruthy(evaluate(*stmt.condition))) {
         try {
@@ -256,6 +275,10 @@ void Interpreter::executeImportStmt(const ImportStmt& stmt) {
         m_envStack.back()["os"] = createOsModule();
     } else if (stmt.moduleName == "app") {
         m_envStack.back()["app"] = createAppModule();
+    } else if (stmt.moduleName == "gui") {
+        m_envStack.back()["gui"] = createGuiModule();
+    } else if (stmt.moduleName == "pkg") {
+        m_envStack.back()["pkg"] = createPkgModule();
     } else if (stmt.moduleName.size() > 3 &&
                stmt.moduleName.substr(stmt.moduleName.size() - 3) == ".sx") {
         // v2.2: import "some_program.sx" / import some_program.sx --

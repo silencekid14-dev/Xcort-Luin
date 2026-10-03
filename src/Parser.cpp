@@ -85,6 +85,7 @@ std::unique_ptr<Stmt> Parser::parseStatement() {
     if (match(TokenType::KEYWORD_SHOW))   return parseShowStmt();
     if (match(TokenType::KEYWORD_ASK))    return parseAskStmt();
     if (match(TokenType::KEYWORD_IF))     return parseIfStmt();
+    if (match(TokenType::KEYWORD_SWITCH)) return parseSwitchStmt();
     if (match(TokenType::KEYWORD_WHILE))  return parseWhileStmt();
     if (match(TokenType::KEYWORD_FOR))    return parseForStmt();
     if (match(TokenType::KEYWORD_LOOP))   return parseLoopStmt();
@@ -216,6 +217,48 @@ std::unique_ptr<Stmt> Parser::parseIfStmt() {
         }
     }
     return std::make_unique<IfStmt>(std::move(cond), std::move(thenB), std::move(elseB));
+}
+
+// switch expr {
+//   case 1, 2:
+//     show("one or two")
+//   case 3:
+//     show("three")
+//   default:
+//     show("other")
+// }
+std::unique_ptr<Stmt> Parser::parseSwitchStmt() {
+    auto expr = parseExpression();
+    if (!expr) throw std::runtime_error("Missing expression after 'switch'");
+    consume(TokenType::LEFT_BRACE, "Expected '{' after switch expression");
+
+    std::vector<SwitchCase> cases;
+    std::unique_ptr<Stmt> defaultBody = nullptr;
+
+    while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+        if (match(TokenType::KEYWORD_CASE)) {
+            SwitchCase sc;
+            // one or more values: case 1, 2, 3:
+            do {
+                auto val = parseExpression();
+                if (!val) throw std::runtime_error("Missing value after 'case'");
+                sc.values.push_back(std::move(val));
+            } while (match(TokenType::COMMA));
+            match(TokenType::COLON);  // optional colon
+            sc.body = parseStatement();
+            if (!sc.body) throw std::runtime_error("Missing body for case");
+            cases.push_back(std::move(sc));
+        } else if (match(TokenType::KEYWORD_DEFAULT)) {
+            match(TokenType::COLON);
+            defaultBody = parseStatement();
+            if (!defaultBody) throw std::runtime_error("Missing body for default");
+        } else {
+            errorAtCurrent("Expected 'case' or 'default' inside switch");
+            break;
+        }
+    }
+    consume(TokenType::RIGHT_BRACE, "Expected '}' to close switch");
+    return std::make_unique<SwitchStmt>(std::move(expr), std::move(cases), std::move(defaultBody));
 }
 
 std::unique_ptr<Stmt> Parser::parseWhileStmt() {

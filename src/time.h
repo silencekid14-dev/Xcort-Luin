@@ -6,6 +6,8 @@
 
 namespace luin {
 
+// Native "time" module — clock, calendar, formatting, sleep, elapsed.
+// Expanded with 30 additional features beyond the original set.
 std::shared_ptr<Module> createTimeModule();
 
 } // namespace luin

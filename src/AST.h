@@ -177,6 +177,26 @@ public:
           elseBranch(std::move(elseB)) {}
 };
 
+// switch expr { case v1, v2: stmt  case v3: stmt  default: stmt }
+// No fall-through: each case body runs exclusively. Simple & clean.
+struct SwitchCase {
+    std::vector<std::unique_ptr<Expr>> values;  // one or more match values
+    std::unique_ptr<Stmt> body;
+};
+
+class SwitchStmt : public Stmt {
+public:
+    std::unique_ptr<Expr> expression;
+    std::vector<SwitchCase> cases;
+    std::unique_ptr<Stmt> defaultBody;  // optional
+
+    SwitchStmt(std::unique_ptr<Expr> expr,
+               std::vector<SwitchCase> cases,
+               std::unique_ptr<Stmt> def = nullptr)
+        : expression(std::move(expr)), cases(std::move(cases)),
+          defaultBody(std::move(def)) {}
+};
+
 class BlockStmt : public Stmt {
 public:
     std::vector<std::unique_ptr<Stmt>> statements;

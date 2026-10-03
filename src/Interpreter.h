@@ -99,6 +99,7 @@ private:
     void executeAssignmentStmt(const AssignmentStmt& stmt);
     void executeAskStmt(const AskStmt& stmt);
     void executeIfStmt(const IfStmt& stmt);
+    void executeSwitchStmt(const SwitchStmt& stmt);
     void executeWhileStmt(const WhileStmt& stmt);
     void executeForStmt(const ForStmt& stmt);
     void executeLoopStmt(const LoopStmt& stmt);

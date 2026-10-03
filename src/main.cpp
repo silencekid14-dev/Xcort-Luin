@@ -79,10 +79,10 @@ int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Luin v" << luin::LUIN_VERSION << "\n"
                   << "Usage:\n"
-                  << "  Luin_v2.4 <file.sx> [more.sx ...]\n"
-                  << "  Luin_v2.4 <file.sx> -b          # compile to <file.sxc>\n"
-                  << "  Luin_v2.4 <file.sxc> -r         # run compiled form\n"
-                  << "  Luin_v2.4 <file.sxc>            # also runs .sxc directly\n";
+                  << "  Luin_2.5 <file.sx> [more.sx ...]\n"
+                  << "  Luin_2.5 <file.sx> -b          # compile to <file.sxc>\n"
+                  << "  Luin_2.5 <file.sxc> -r         # run compiled form\n"
+                  << "  Luin_2.5 <file.sxc>            # also runs .sxc directly\n";
         return 1;
     }
 

@@ -24,6 +24,9 @@ enum class TokenType {
     KEYWORD_TRY,
     KEYWORD_IMPORT,
     KEYWORD_IN,
+    KEYWORD_SWITCH,
+    KEYWORD_CASE,
+    KEYWORD_DEFAULT,
 
     // Literal keywords
     KW_TRUE,

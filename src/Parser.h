@@ -35,6 +35,7 @@ private:
     std::unique_ptr<Stmt> parseAssignmentStmt();
     std::unique_ptr<Stmt> parseAskStmt();
     std::unique_ptr<Stmt> parseIfStmt();
+    std::unique_ptr<Stmt> parseSwitchStmt();
     std::unique_ptr<Stmt> parseWhileStmt();
     std::unique_ptr<Stmt> parseForStmt();
     std::unique_ptr<Stmt> parseLoopStmt();

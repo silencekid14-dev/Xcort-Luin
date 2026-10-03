@@ -221,6 +221,9 @@ void Lexer::identifierOrKeyword() {
     else if (lexeme == "try")   addToken(TokenType::KEYWORD_TRY, lexeme);
     else if (lexeme == "import") addToken(TokenType::KEYWORD_IMPORT, lexeme);
     else if (lexeme == "in")    addToken(TokenType::KEYWORD_IN, lexeme);
+    else if (lexeme == "switch") addToken(TokenType::KEYWORD_SWITCH, lexeme);
+    else if (lexeme == "case")  addToken(TokenType::KEYWORD_CASE, lexeme);
+    else if (lexeme == "default") addToken(TokenType::KEYWORD_DEFAULT, lexeme);
     else if (lexeme == "true")  addToken(TokenType::KW_TRUE, lexeme);
     else if (lexeme == "false") addToken(TokenType::KW_FALSE, lexeme);
     else                        addToken(TokenType::IDENTIFIER, lexeme);

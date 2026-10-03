@@ -7,7 +7,7 @@ namespace luin {
 
 // Current shipping version of this binary. Bump this (and the
 // binary name / CHANGES file) for every public release.
-constexpr const char* LUIN_VERSION = "2.4";
+constexpr const char* LUIN_VERSION = "2.5";
 
 // Platform tag embedded in the state file so a shared state across
 // different builds (Windows .exe / macOS / Linux) is still distinguishable.
