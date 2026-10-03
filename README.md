@@ -1,10 +1,10 @@
 **Luin (Silex) Programming Language**
 
-**Version:** 2.4.1
-**Date:** 26th Sep 2026.  
+**Version:** 2.5
+**Date:** 3rd Oct 2026.  
 **Author:** Xcort Team by Ars Platforms Inc. 
 
-**New Update Feature On v2.4.1:** Nothing new, just did a re-compile build patch for 2.4.1, because '-static' wasn't there!. Enjoy!.
+**New Update Feature On v2.5:** Introduced GUI Feature(raylib connections), local pkg(Not fully extended in network), and other 40 features more, in ***src*** folder!, **Switch** feature to eliminate long if/els chains!. Thankyou!.
 
 **NOTE**: We has Ars Platforms, Inc know that we said on our youtube channel (http://youtube.com/@Ars-Platforms-Inc) about Luin IDE, it's still under building,
 It's taking longer than has expected, we are trully, sorry for people using Luin.🙏
@@ -854,13 +854,16 @@ g++ -std=c++17 *.cpp resource.res -o Luin_version_name.exe
 
 ## Current Status
 
-Luin is under active development. Version 2.4.1 supports:
+Luin is under active development. Version 2.5 supports:
 - Variables and basic types
 - Control flow (if/elf/els, while, for, loop)
 - Functions and classes
 - f-strings and interactive input
 - Version Checking.
 - SXC binary
+- GUI support via ***Raylib***
+- Local Pkg
+- Switch feature for long if/els chains
 - imports and more.
 
 More features (Advance import system,more modules, hardware support, etc.) are coming soon.
