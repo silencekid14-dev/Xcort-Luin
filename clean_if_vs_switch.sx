@@ -1,0 +1,48 @@
+# clean_if_vs_switch.sx
+# Side-by-side: long if/elf/els vs the new switch (both pure Luin)
+
+status = 2
+
+show("--- old style (long chain) ---")
+if status == 0 {
+  show("idle")
+}
+elf status == 1 {
+  show("running")
+}
+elf status == 2 {
+  show("paused")
+}
+elf status == 3 {
+  show("error")
+}
+els {
+  show("unknown")
+}
+
+show("--- new switch style ---")
+switch status {
+  case 0:
+    show("idle")
+  case 1:
+    show("running")
+  case 2:
+    show("paused")
+  case 3:
+    show("error")
+  default:
+    show("unknown")
+}
+
+# Multiple values per case keeps it even shorter
+code = 404
+switch code {
+  case 200, 201, 204:
+    show("success family")
+  case 400, 401, 403, 404:
+    show("client error")
+  case 500, 502, 503:
+    show("server error")
+  default:
+    show("other")
+}

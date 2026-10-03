@@ -1,0 +1,67 @@
+# switch_demo.sx — pure Luin, demonstrates the new switch syntax
+# (no C++ code here)
+
+show("=== Luin switch demo ===")
+
+# 1. Simple day-of-week
+day = 4
+switch day {
+  case 1:
+    show("Monday")
+  case 2:
+    show("Tuesday")
+  case 3:
+    show("Wednesday")
+  case 4, 5:
+    show("Almost weekend (Thu/Fri)")
+  case 6, 7:
+    show("Weekend!")
+  default:
+    show("Invalid day")
+}
+
+# 2. Grade bands
+score = 87
+switch score {
+  case 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100:
+    show("A")
+  case 80, 81, 82, 83, 84, 85, 86, 87, 88, 89:
+    show("B")
+  case 70, 71, 72, 73, 74, 75, 76, 77, 78, 79:
+    show("C")
+  default:
+    show("Need more practice")
+}
+
+# 3. String matching
+cmd = "help"
+switch cmd {
+  case "start", "run":
+    show("Starting...")
+  case "stop", "quit", "exit":
+    show("Stopping...")
+  case "help":
+    show("Commands: start, stop, help")
+  default:
+    show(f"Unknown command: {cmd}")
+}
+
+# 4. Nested with existing if/loop
+n = 0
+loop {
+  switch n {
+    case 0:
+      show("zero")
+    case 1:
+      show("one")
+    case 2:
+      show("two — done")
+      sloop()
+    default:
+      show("unexpected")
+      sloop()
+  }
+  n = n + 1
+}
+
+show("=== done ===")

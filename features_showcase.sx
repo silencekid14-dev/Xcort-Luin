@@ -1,0 +1,74 @@
+# features_showcase.sx — pure Luin examples
+# Shows current language + the new switch, written entirely in Luin syntax.
+
+import math
+import random
+import time
+
+show("Luin feature showcase (no C++)")
+
+# --- functions ---
+fn factorial(n) {
+  if n <= 1 {
+    rtn 1
+  }
+  rtn n * factorial(n - 1)
+}
+
+show(f"5! = {factorial(5)}")
+
+# --- classes ---
+cls Counter {
+  fn init() {
+    self.value = 0
+  }
+  fn tick() {
+    self.value = self.value + 1
+    rtn self.value
+  }
+}
+
+c = Counter()
+c.init()
+show(f"tick -> {c.tick()}")
+show(f"tick -> {c.tick()}")
+
+# --- arrays & for ---
+nums = [10, 20, 30, 40]
+for x in nums {
+  show(f"  item {x}")
+}
+
+# --- switch (new) ---
+choice = random.randint(1, 4)
+switch choice {
+  case 1:
+    show("rolled 1 — try again")
+  case 2, 3:
+    show("rolled mid")
+  case 4:
+    show("lucky 4!")
+  default:
+    show("impossible")
+}
+
+# --- try ---
+try {
+  show(math.sqrt(16))
+  show(math.sqrt(-1))   # may error depending on math module
+}
+if get(e) != "" {
+  show(f"caught: {get(e)}")
+}
+
+# --- while + sloop ---
+i = 0
+while true {
+  if i >= 3 {
+    sloop()
+  }
+  show(f"while i={i}")
+  i = i + 1
+}
+
+show("showcase finished")
